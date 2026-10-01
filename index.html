@@ -10,6 +10,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <!-- Chart.js 用於繪製歷年趨勢圖 -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Chart.js DataLabels 插件 (用於在長條圖上方顯示數值) -->
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
 </head>
 <body class="bg-slate-50 min-h-screen py-8 px-4 font-sans text-slate-800">
 
@@ -36,7 +38,15 @@
           </select>
         </div>
 
-        <!-- 2. 開設系所名稱 -->
+        <!-- 2. 學年度 -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">學年度</label>
+          <select id="filterYear" class="w-full p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <option value="">全部學年度</option>
+          </select>
+        </div>
+
+        <!-- 3. 開設系所名稱 -->
         <div>
           <label class="block text-xs font-semibold text-slate-600 mb-1">開設系所名稱</label>
           <select id="filterDept" class="w-full p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
@@ -44,7 +54,7 @@
           </select>
         </div>
 
-        <!-- 3. 學制 -->
+        <!-- 4. 學制 -->
         <div>
           <label class="block text-xs font-semibold text-slate-600 mb-1">學制</label>
           <select id="filterSystem" class="w-full p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
@@ -52,19 +62,11 @@
           </select>
         </div>
 
-        <!-- 4. 領域別 -->
+        <!-- 5. 領域別 -->
         <div>
           <label class="block text-xs font-semibold text-slate-600 mb-1">領域別</label>
           <select id="filterDomain" class="w-full p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
             <option value="">全部領域</option>
-          </select>
-        </div>
-
-        <!-- 5. 學年度 -->
-        <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1">學年度</label>
-          <select id="filterYear" class="w-full p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-            <option value="">全部學年度</option>
           </select>
         </div>
 
@@ -138,15 +140,18 @@
   </div>
 
   <script>
+    // 註冊 ChartDataLabels 外掛
+    Chart.register(ChartDataLabels);
+
     let rawData = [];
     let myChart = null;
 
     // DOM 元素
     const filterQuotaType = document.getElementById('filterQuotaType');
+    const filterYear = document.getElementById('filterYear');
     const filterDept = document.getElementById('filterDept');
     const filterSystem = document.getElementById('filterSystem');
     const filterDomain = document.getElementById('filterDomain');
-    const filterYear = document.getElementById('filterYear');
     const searchInput = document.getElementById('searchInput');
     const resetBtn = document.getElementById('resetBtn');
 
@@ -182,10 +187,10 @@
     // 初始化下拉選單選項
     function initDropdowns() {
       populateOptions(filterQuotaType, [...new Set(rawData.map(d => d.quotaType))].sort());
+      populateOptions(filterYear, [...new Set(rawData.map(d => d.year))].sort((a, b) => a - b)); // 學年度升冪排列 (109 -> 116)
       populateOptions(filterDept, [...new Set(rawData.map(d => d.dept))].sort());
       populateOptions(filterSystem, [...new Set(rawData.map(d => d.system))].sort());
       populateOptions(filterDomain, [...new Set(rawData.map(d => d.domain))].sort());
-      populateOptions(filterYear, [...new Set(rawData.map(d => d.year))].sort((a, b) => b - a));
     }
 
     function populateOptions(selectElem, values) {
@@ -202,18 +207,18 @@
     // 篩選邏輯
     function getFilteredData() {
       const selectedType = filterQuotaType.value;
+      const selectedYear = filterYear.value;
       const selectedDept = filterDept.value;
       const selectedSystem = filterSystem.value;
       const selectedDomain = filterDomain.value;
-      const selectedYear = filterYear.value;
       const keyword = searchInput.value.toLowerCase().trim();
 
       return rawData.filter(row => {
         const matchType = !selectedType || row.quotaType === selectedType;
+        const matchYear = !selectedYear || row.year === selectedYear;
         const matchDept = !selectedDept || row.dept === selectedDept;
         const matchSystem = !selectedSystem || row.system === selectedSystem;
         const matchDomain = !selectedDomain || row.domain === selectedDomain;
-        const matchYear = !selectedYear || row.year === selectedYear;
         const matchKeyword = !keyword || 
           row.dept.toLowerCase().includes(keyword) || 
           row.system.toLowerCase().includes(keyword) || 
@@ -221,7 +226,7 @@
           row.quotaType.toLowerCase().includes(keyword) ||
           row.year.includes(keyword);
 
-        return matchType && matchDept && matchSystem && matchDomain && matchYear && matchKeyword;
+        return matchType && matchYear && matchDept && matchSystem && matchDomain && matchKeyword;
       });
     }
 
@@ -261,7 +266,7 @@
       updateChart(filtered);
     }
 
-    // 繪製歷年趨勢圖
+    // 繪製歷年趨勢圖 (並在長條上方標註數值)
     function updateChart(filteredData) {
       const yearMap = {};
       
@@ -286,7 +291,7 @@
           datasets: [{
             label: '總名額',
             data: quotas,
-            backgroundColor: 'rgba(37, 99, 235, 0.75)',
+            backgroundColor: 'rgba(59, 130, 246, 0.85)',
             borderColor: 'rgba(37, 99, 235, 1)',
             borderWidth: 1,
             borderRadius: 6
@@ -295,26 +300,50 @@
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
+          layout: {
+            padding: {
+              top: 25 // 頂部預留空間避免數值被切掉
+            }
+          },
+          plugins: {
+            legend: { display: false },
+            // 長條頂部數值標籤設定
+            datalabels: {
+              anchor: 'end',
+              align: 'top',
+              color: '#334155',
+              font: {
+                weight: 'bold',
+                size: 12
+              },
+              formatter: function(value) {
+                return value > 0 ? value.toLocaleString() : '';
+              }
+            }
+          },
           scales: {
-            y: { beginAtZero: true, ticks: { precision: 0 } }
+            y: {
+              beginAtZero: true,
+              ticks: { precision: 0 },
+              grace: '12%' // 軸線自動補上12%緩衝高度，確保數字完整顯示
+            }
           }
         }
       });
     }
 
     // 事件監聽
-    [filterQuotaType, filterDept, filterSystem, filterDomain, filterYear].forEach(elem => {
+    [filterQuotaType, filterYear, filterDept, filterSystem, filterDomain].forEach(elem => {
       elem.addEventListener('change', updateDisplay);
     });
     searchInput.addEventListener('input', updateDisplay);
 
     resetBtn.addEventListener('click', () => {
       filterQuotaType.value = '';
+      filterYear.value = '';
       filterDept.value = '';
       filterSystem.value = '';
       filterDomain.value = '';
-      filterYear.value = '';
       searchInput.value = '';
       updateDisplay();
     });
