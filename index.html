@@ -10,7 +10,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <!-- Chart.js 用於繪製歷年趨勢圖 -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Chart.js DataLabels 插件 (用於在長條圖上方顯示數值) -->
+  <!-- Chart.js DataLabels 插件 -->
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
 </head>
 <body class="bg-slate-50 min-h-screen py-8 px-4 font-sans text-slate-800">
@@ -28,62 +28,63 @@
       <h2 class="text-lg font-bold mb-4 text-slate-700 flex items-center gap-2">
         🔍 資料篩選器 <span class="text-xs font-normal text-slate-400">（各選單皆支援複選）</span>
       </h2>
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4">
         
         <!-- 1. 名額類別 (複選) -->
-        <div class="relative multi-select" id="msQuotaType">
+        <div class="relative multi-select lg:col-span-1" id="msQuotaType">
           <label class="block text-xs font-semibold text-slate-600 mb-1">名額類別</label>
           <button type="button" class="ms-btn w-full p-2 border border-slate-300 rounded-lg text-sm bg-white flex justify-between items-center text-slate-700 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500">
             <span class="ms-label truncate">全部類別</span>
             <svg class="w-4 h-4 text-slate-400 shrink-0 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
           </button>
-          <div class="ms-panel hidden absolute z-30 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-64 overflow-y-auto p-2 text-sm"></div>
+          <div class="ms-panel hidden absolute z-30 left-0 min-w-full w-max max-w-xs mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-64 overflow-y-auto p-2 text-sm"></div>
         </div>
 
         <!-- 2. 學年度 (複選) -->
-        <div class="relative multi-select" id="msYear">
+        <div class="relative multi-select lg:col-span-1" id="msYear">
           <label class="block text-xs font-semibold text-slate-600 mb-1">學年度</label>
           <button type="button" class="ms-btn w-full p-2 border border-slate-300 rounded-lg text-sm bg-white flex justify-between items-center text-slate-700 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500">
             <span class="ms-label truncate">全部學年度</span>
             <svg class="w-4 h-4 text-slate-400 shrink-0 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
           </button>
-          <div class="ms-panel hidden absolute z-30 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-64 overflow-y-auto p-2 text-sm"></div>
+          <div class="ms-panel hidden absolute z-30 left-0 min-w-full w-max max-w-xs mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-64 overflow-y-auto p-2 text-sm"></div>
         </div>
 
-        <!-- 3. 開設系所名稱 (複選) -->
-        <div class="relative multi-select" id="msDept">
+        <!-- 3. 開設系所名稱 (複選 - 加寬佔用 2 欄位) -->
+        <div class="relative multi-select sm:col-span-2 lg:col-span-2" id="msDept">
           <label class="block text-xs font-semibold text-slate-600 mb-1">開設系所名稱</label>
           <button type="button" class="ms-btn w-full p-2 border border-slate-300 rounded-lg text-sm bg-white flex justify-between items-center text-slate-700 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500">
             <span class="ms-label truncate">全部系所</span>
             <svg class="w-4 h-4 text-slate-400 shrink-0 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
           </button>
-          <div class="ms-panel hidden absolute z-30 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-64 overflow-y-auto p-2 text-sm"></div>
+          <!-- 下拉選單面板自動根據內容最長字串加寬 (min-w-full w-max max-w-md) -->
+          <div class="ms-panel hidden absolute z-30 left-0 min-w-full min-w-[320px] w-max max-w-md mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-72 overflow-y-auto p-2 text-sm"></div>
         </div>
 
         <!-- 4. 學制 (複選) -->
-        <div class="relative multi-select" id="msSystem">
+        <div class="relative multi-select lg:col-span-1" id="msSystem">
           <label class="block text-xs font-semibold text-slate-600 mb-1">學制</label>
           <button type="button" class="ms-btn w-full p-2 border border-slate-300 rounded-lg text-sm bg-white flex justify-between items-center text-slate-700 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500">
             <span class="ms-label truncate">全部學制</span>
             <svg class="w-4 h-4 text-slate-400 shrink-0 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
           </button>
-          <div class="ms-panel hidden absolute z-30 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-64 overflow-y-auto p-2 text-sm"></div>
+          <div class="ms-panel hidden absolute z-30 left-0 min-w-full w-max max-w-xs mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-64 overflow-y-auto p-2 text-sm"></div>
         </div>
 
         <!-- 5. 領域別 (複選) -->
-        <div class="relative multi-select" id="msDomain">
+        <div class="relative multi-select lg:col-span-1" id="msDomain">
           <label class="block text-xs font-semibold text-slate-600 mb-1">領域別</label>
           <button type="button" class="ms-btn w-full p-2 border border-slate-300 rounded-lg text-sm bg-white flex justify-between items-center text-slate-700 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500">
             <span class="ms-label truncate">全部領域</span>
             <svg class="w-4 h-4 text-slate-400 shrink-0 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
           </button>
-          <div class="ms-panel hidden absolute z-30 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-64 overflow-y-auto p-2 text-sm"></div>
+          <div class="ms-panel hidden absolute z-30 left-0 min-w-full w-max max-w-xs mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-64 overflow-y-auto p-2 text-sm"></div>
         </div>
 
         <!-- 6. 關鍵字搜尋 -->
-        <div>
+        <div class="lg:col-span-1">
           <label class="block text-xs font-semibold text-slate-600 mb-1">關鍵字搜尋</label>
-          <input type="text" id="searchInput" placeholder="搜尋系所或關鍵字..." class="w-full p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          <input type="text" id="searchInput" placeholder="搜尋關鍵字..." class="w-full p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
         </div>
 
       </div>
@@ -162,13 +163,11 @@
   </div>
 
   <script>
-    // 註冊 ChartDataLabels 外掛
     Chart.register(ChartDataLabels);
 
     let rawData = [];
     let myChart = null;
 
-    // DOM 元素
     const searchInput = document.getElementById('searchInput');
     const resetBtn = document.getElementById('resetBtn');
 
@@ -210,13 +209,13 @@
       setupMultiSelect('msDomain', '全部領域', [...new Set(rawData.map(d => d.domain))].sort());
     }
 
-    // 建立複選元件的內部 UI 與事件監聽
+    // 建立複選元件內部 UI
     function setupMultiSelect(containerId, defaultLabel, options, hasSearch = false) {
       const container = document.getElementById(containerId);
       const btn = container.querySelector('.ms-btn');
       const panel = container.querySelector('.ms-panel');
 
-      // 開啟/關閉 下拉選單
+      // 切換選單顯示/隱藏
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         document.querySelectorAll('.ms-panel').forEach(p => {
@@ -225,7 +224,6 @@
         panel.classList.toggle('hidden');
       });
 
-      // 阻止面板點擊引發外層關閉
       panel.addEventListener('click', (e) => e.stopPropagation());
 
       let html = `
@@ -235,7 +233,7 @@
         </div>
       `;
 
-      if (hasSearch && options.length > 6) {
+      if (hasSearch && options.length > 5) {
         html += `
           <div class="mb-1.5">
             <input type="text" placeholder="快速搜尋選項..." class="ms-search w-full p-1.5 border border-slate-200 rounded text-xs focus:outline-none focus:border-blue-500">
@@ -244,17 +242,18 @@
       }
 
       html += `<div class="space-y-1 ms-options-list">`;
+      // 使用 whitespace-nowrap 確保完整名稱不換行、不截斷
       html += options.map(val => `
-        <label class="ms-item flex items-center gap-2 px-2 py-1.5 hover:bg-slate-100 rounded cursor-pointer text-slate-700">
-          <input type="checkbox" value="${val}" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
-          <span class="truncate">${val}</span>
+        <label class="ms-item flex items-center gap-2 px-2 py-1.5 hover:bg-slate-100 rounded cursor-pointer text-slate-700 whitespace-nowrap" title="${val}">
+          <input type="checkbox" value="${val}" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500 shrink-0">
+          <span class="text-xs sm:text-sm">${val}</span>
         </label>
       `).join('');
       html += `</div>`;
 
       panel.innerHTML = html;
 
-      // 監聽勾選狀態改變
+      // 監聽勾選狀態
       panel.querySelectorAll('input[type="checkbox"]').forEach(cb => {
         cb.addEventListener('change', () => {
           updateMultiSelectLabel(container, defaultLabel);
@@ -262,7 +261,7 @@
         });
       });
 
-      // 全選按鈕
+      // 全選
       panel.querySelector('.ms-select-all').addEventListener('click', () => {
         panel.querySelectorAll('.ms-item').forEach(item => {
           if (item.style.display !== 'none') {
@@ -274,7 +273,7 @@
         updateDisplay();
       });
 
-      // 清除按鈕
+      // 清除
       panel.querySelector('.ms-clear-all').addEventListener('click', () => {
         panel.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
         updateMultiSelectLabel(container, defaultLabel);
@@ -294,31 +293,32 @@
       }
     }
 
-    // 更新按鈕顯示文字
+    // 更新按鈕標籤
     function updateMultiSelectLabel(container, defaultLabel) {
       const checked = Array.from(container.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
       const label = container.querySelector('.ms-label');
 
       if (checked.length === 0) {
         label.textContent = defaultLabel;
+        label.title = defaultLabel;
         label.classList.remove('font-bold', 'text-blue-600');
       } else if (checked.length === 1) {
         label.textContent = checked[0];
+        label.title = checked[0];
         label.classList.add('font-bold', 'text-blue-600');
       } else {
         label.textContent = `已選擇 ${checked.length} 項`;
+        label.title = checked.join(', ');
         label.classList.add('font-bold', 'text-blue-600');
       }
     }
 
-    // 取得選取的複選值 (若未勾選代表不限，傳回空陣列)
     function getSelectedValues(containerId) {
       const container = document.getElementById(containerId);
       if (!container) return [];
       return Array.from(container.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
     }
 
-    // 重置單一元件
     function resetMultiSelectComponent(containerId, defaultLabel) {
       const container = document.getElementById(containerId);
       if (!container) return;
@@ -331,12 +331,12 @@
       updateMultiSelectLabel(container, defaultLabel);
     }
 
-    // 點擊空白處自動關閉彈出面板
+    // 點擊外部關閉選單
     document.addEventListener('click', () => {
       document.querySelectorAll('.ms-panel').forEach(p => p.classList.add('hidden'));
     });
 
-    // 篩選核心邏輯
+    // 篩選邏輯
     function getFilteredData() {
       const selQuotaTypes = getSelectedValues('msQuotaType');
       const selYears = getSelectedValues('msYear');
@@ -362,11 +362,10 @@
       });
     }
 
-    // 更新畫面
+    // 更新數據與畫面
     function updateDisplay() {
       const filtered = getFilteredData();
 
-      // 1. 更新統計卡
       const totalQuota = filtered.reduce((sum, r) => sum + (isNaN(r.quota) ? 0 : r.quota), 0);
       const uniqueDepts = new Set(filtered.map(r => r.dept)).size;
 
@@ -375,7 +374,6 @@
       statDeptCount.textContent = uniqueDepts.toLocaleString();
       tableInfo.textContent = `顯示 ${filtered.length} 筆資料`;
 
-      // 2. 渲染表格
       if (filtered.length === 0) {
         dataTableBody.innerHTML = `<tr><td colspan="6" class="px-4 py-8 text-center text-slate-400">查無符合條件的資料</td></tr>`;
       } else {
@@ -394,11 +392,10 @@
         `).join('');
       }
 
-      // 3. 更新圖表
       updateChart(filtered);
     }
 
-    // 繪製歷年趨勢圖
+    // 繪製圖表
     function updateChart(filteredData) {
       const yearMap = {};
       
@@ -458,10 +455,8 @@
       });
     }
 
-    // 關鍵字搜尋輸入事件
     searchInput.addEventListener('input', updateDisplay);
 
-    // 重置所有篩選
     resetBtn.addEventListener('click', () => {
       resetMultiSelectComponent('msQuotaType', '全部類別');
       resetMultiSelectComponent('msYear', '全部學年度');
