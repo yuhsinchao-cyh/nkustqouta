@@ -26,48 +26,58 @@
     <!-- 篩選控制面板 -->
     <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
       <h2 class="text-lg font-bold mb-4 text-slate-700 flex items-center gap-2">
-        🔍 資料篩選器
+        🔍 資料篩選器 <span class="text-xs font-normal text-slate-400">（各選單皆支援複選）</span>
       </h2>
       <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         
-        <!-- 1. 名額類別 -->
-        <div>
+        <!-- 1. 名額類別 (複選) -->
+        <div class="relative multi-select" id="msQuotaType">
           <label class="block text-xs font-semibold text-slate-600 mb-1">名額類別</label>
-          <select id="filterQuotaType" class="w-full p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-            <option value="">全部類別</option>
-          </select>
+          <button type="button" class="ms-btn w-full p-2 border border-slate-300 rounded-lg text-sm bg-white flex justify-between items-center text-slate-700 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <span class="ms-label truncate">全部類別</span>
+            <svg class="w-4 h-4 text-slate-400 shrink-0 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+          </button>
+          <div class="ms-panel hidden absolute z-30 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-64 overflow-y-auto p-2 text-sm"></div>
         </div>
 
-        <!-- 2. 學年度 -->
-        <div>
+        <!-- 2. 學年度 (複選) -->
+        <div class="relative multi-select" id="msYear">
           <label class="block text-xs font-semibold text-slate-600 mb-1">學年度</label>
-          <select id="filterYear" class="w-full p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-            <option value="">全部學年度</option>
-          </select>
+          <button type="button" class="ms-btn w-full p-2 border border-slate-300 rounded-lg text-sm bg-white flex justify-between items-center text-slate-700 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <span class="ms-label truncate">全部學年度</span>
+            <svg class="w-4 h-4 text-slate-400 shrink-0 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+          </button>
+          <div class="ms-panel hidden absolute z-30 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-64 overflow-y-auto p-2 text-sm"></div>
         </div>
 
-        <!-- 3. 開設系所名稱 -->
-        <div>
+        <!-- 3. 開設系所名稱 (複選) -->
+        <div class="relative multi-select" id="msDept">
           <label class="block text-xs font-semibold text-slate-600 mb-1">開設系所名稱</label>
-          <select id="filterDept" class="w-full p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-            <option value="">全部系所</option>
-          </select>
+          <button type="button" class="ms-btn w-full p-2 border border-slate-300 rounded-lg text-sm bg-white flex justify-between items-center text-slate-700 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <span class="ms-label truncate">全部系所</span>
+            <svg class="w-4 h-4 text-slate-400 shrink-0 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+          </button>
+          <div class="ms-panel hidden absolute z-30 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-64 overflow-y-auto p-2 text-sm"></div>
         </div>
 
-        <!-- 4. 學制 -->
-        <div>
+        <!-- 4. 學制 (複選) -->
+        <div class="relative multi-select" id="msSystem">
           <label class="block text-xs font-semibold text-slate-600 mb-1">學制</label>
-          <select id="filterSystem" class="w-full p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-            <option value="">全部學制</option>
-          </select>
+          <button type="button" class="ms-btn w-full p-2 border border-slate-300 rounded-lg text-sm bg-white flex justify-between items-center text-slate-700 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <span class="ms-label truncate">全部學制</span>
+            <svg class="w-4 h-4 text-slate-400 shrink-0 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+          </button>
+          <div class="ms-panel hidden absolute z-30 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-64 overflow-y-auto p-2 text-sm"></div>
         </div>
 
-        <!-- 5. 領域別 -->
-        <div>
+        <!-- 5. 領域別 (複選) -->
+        <div class="relative multi-select" id="msDomain">
           <label class="block text-xs font-semibold text-slate-600 mb-1">領域別</label>
-          <select id="filterDomain" class="w-full p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-            <option value="">全部領域</option>
-          </select>
+          <button type="button" class="ms-btn w-full p-2 border border-slate-300 rounded-lg text-sm bg-white flex justify-between items-center text-slate-700 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <span class="ms-label truncate">全部領域</span>
+            <svg class="w-4 h-4 text-slate-400 shrink-0 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+          </button>
+          <div class="ms-panel hidden absolute z-30 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-64 overflow-y-auto p-2 text-sm"></div>
         </div>
 
         <!-- 6. 關鍵字搜尋 -->
@@ -159,11 +169,6 @@
     let myChart = null;
 
     // DOM 元素
-    const filterQuotaType = document.getElementById('filterQuotaType');
-    const filterYear = document.getElementById('filterYear');
-    const filterDept = document.getElementById('filterDept');
-    const filterSystem = document.getElementById('filterSystem');
-    const filterDomain = document.getElementById('filterDomain');
     const searchInput = document.getElementById('searchInput');
     const resetBtn = document.getElementById('resetBtn');
 
@@ -188,7 +193,7 @@
           domain: (row['領域別'] || '').toString().trim()
         }));
 
-        initDropdowns();
+        initMultiSelects();
         updateDisplay();
       },
       error: function(err) {
@@ -196,41 +201,156 @@
       }
     });
 
-    // 初始化下拉選單選項
-    function initDropdowns() {
-      populateOptions(filterQuotaType, [...new Set(rawData.map(d => d.quotaType))].sort());
-      populateOptions(filterYear, [...new Set(rawData.map(d => d.year))].sort((a, b) => a - b));
-      populateOptions(filterDept, [...new Set(rawData.map(d => d.dept))].sort());
-      populateOptions(filterSystem, [...new Set(rawData.map(d => d.system))].sort());
-      populateOptions(filterDomain, [...new Set(rawData.map(d => d.domain))].sort());
+    // 初始化所有複選下拉選單
+    function initMultiSelects() {
+      setupMultiSelect('msQuotaType', '全部類別', [...new Set(rawData.map(d => d.quotaType))].sort());
+      setupMultiSelect('msYear', '全部學年度', [...new Set(rawData.map(d => d.year))].sort((a, b) => a - b));
+      setupMultiSelect('msDept', '全部系所', [...new Set(rawData.map(d => d.dept))].sort(), true);
+      setupMultiSelect('msSystem', '全部學制', [...new Set(rawData.map(d => d.system))].sort());
+      setupMultiSelect('msDomain', '全部領域', [...new Set(rawData.map(d => d.domain))].sort());
     }
 
-    function populateOptions(selectElem, values) {
-      values.forEach(val => {
-        if (val) {
-          const opt = document.createElement('option');
-          opt.value = val;
-          opt.textContent = val;
-          selectElem.appendChild(opt);
-        }
+    // 建立複選元件的內部 UI 與事件監聽
+    function setupMultiSelect(containerId, defaultLabel, options, hasSearch = false) {
+      const container = document.getElementById(containerId);
+      const btn = container.querySelector('.ms-btn');
+      const panel = container.querySelector('.ms-panel');
+
+      // 開啟/關閉 下拉選單
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        document.querySelectorAll('.ms-panel').forEach(p => {
+          if (p !== panel) p.classList.add('hidden');
+        });
+        panel.classList.toggle('hidden');
       });
+
+      // 阻止面板點擊引發外層關閉
+      panel.addEventListener('click', (e) => e.stopPropagation());
+
+      let html = `
+        <div class="flex justify-between items-center px-1 pb-1.5 mb-1.5 border-b border-slate-100 text-xs text-slate-500">
+          <button type="button" class="ms-select-all hover:text-blue-600 font-medium">全選</button>
+          <button type="button" class="ms-clear-all hover:text-red-600 font-medium">清除</button>
+        </div>
+      `;
+
+      if (hasSearch && options.length > 6) {
+        html += `
+          <div class="mb-1.5">
+            <input type="text" placeholder="快速搜尋選項..." class="ms-search w-full p-1.5 border border-slate-200 rounded text-xs focus:outline-none focus:border-blue-500">
+          </div>
+        `;
+      }
+
+      html += `<div class="space-y-1 ms-options-list">`;
+      html += options.map(val => `
+        <label class="ms-item flex items-center gap-2 px-2 py-1.5 hover:bg-slate-100 rounded cursor-pointer text-slate-700">
+          <input type="checkbox" value="${val}" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+          <span class="truncate">${val}</span>
+        </label>
+      `).join('');
+      html += `</div>`;
+
+      panel.innerHTML = html;
+
+      // 監聽勾選狀態改變
+      panel.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+        cb.addEventListener('change', () => {
+          updateMultiSelectLabel(container, defaultLabel);
+          updateDisplay();
+        });
+      });
+
+      // 全選按鈕
+      panel.querySelector('.ms-select-all').addEventListener('click', () => {
+        panel.querySelectorAll('.ms-item').forEach(item => {
+          if (item.style.display !== 'none') {
+            const cb = item.querySelector('input[type="checkbox"]');
+            cb.checked = true;
+          }
+        });
+        updateMultiSelectLabel(container, defaultLabel);
+        updateDisplay();
+      });
+
+      // 清除按鈕
+      panel.querySelector('.ms-clear-all').addEventListener('click', () => {
+        panel.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+        updateMultiSelectLabel(container, defaultLabel);
+        updateDisplay();
+      });
+
+      // 搜尋功能
+      const searchInputElem = panel.querySelector('.ms-search');
+      if (searchInputElem) {
+        searchInputElem.addEventListener('input', (e) => {
+          const q = e.target.value.toLowerCase();
+          panel.querySelectorAll('.ms-item').forEach(item => {
+            const text = item.textContent.toLowerCase();
+            item.style.display = text.includes(q) ? 'flex' : 'none';
+          });
+        });
+      }
     }
 
-    // 篩選邏輯
+    // 更新按鈕顯示文字
+    function updateMultiSelectLabel(container, defaultLabel) {
+      const checked = Array.from(container.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+      const label = container.querySelector('.ms-label');
+
+      if (checked.length === 0) {
+        label.textContent = defaultLabel;
+        label.classList.remove('font-bold', 'text-blue-600');
+      } else if (checked.length === 1) {
+        label.textContent = checked[0];
+        label.classList.add('font-bold', 'text-blue-600');
+      } else {
+        label.textContent = `已選擇 ${checked.length} 項`;
+        label.classList.add('font-bold', 'text-blue-600');
+      }
+    }
+
+    // 取得選取的複選值 (若未勾選代表不限，傳回空陣列)
+    function getSelectedValues(containerId) {
+      const container = document.getElementById(containerId);
+      if (!container) return [];
+      return Array.from(container.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+    }
+
+    // 重置單一元件
+    function resetMultiSelectComponent(containerId, defaultLabel) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      container.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+      const searchInputElem = container.querySelector('.ms-search');
+      if (searchInputElem) {
+        searchInputElem.value = '';
+        container.querySelectorAll('.ms-item').forEach(item => item.style.display = 'flex');
+      }
+      updateMultiSelectLabel(container, defaultLabel);
+    }
+
+    // 點擊空白處自動關閉彈出面板
+    document.addEventListener('click', () => {
+      document.querySelectorAll('.ms-panel').forEach(p => p.classList.add('hidden'));
+    });
+
+    // 篩選核心邏輯
     function getFilteredData() {
-      const selectedType = filterQuotaType.value;
-      const selectedYear = filterYear.value;
-      const selectedDept = filterDept.value;
-      const selectedSystem = filterSystem.value;
-      const selectedDomain = filterDomain.value;
+      const selQuotaTypes = getSelectedValues('msQuotaType');
+      const selYears = getSelectedValues('msYear');
+      const selDepts = getSelectedValues('msDept');
+      const selSystems = getSelectedValues('msSystem');
+      const selDomains = getSelectedValues('msDomain');
       const keyword = searchInput.value.toLowerCase().trim();
 
       return rawData.filter(row => {
-        const matchType = !selectedType || row.quotaType === selectedType;
-        const matchYear = !selectedYear || row.year === selectedYear;
-        const matchDept = !selectedDept || row.dept === selectedDept;
-        const matchSystem = !selectedSystem || row.system === selectedSystem;
-        const matchDomain = !selectedDomain || row.domain === selectedDomain;
+        const matchType = selQuotaTypes.length === 0 || selQuotaTypes.includes(row.quotaType);
+        const matchYear = selYears.length === 0 || selYears.includes(row.year);
+        const matchDept = selDepts.length === 0 || selDepts.includes(row.dept);
+        const matchSystem = selSystems.length === 0 || selSystems.includes(row.system);
+        const matchDomain = selDomains.length === 0 || selDomains.includes(row.domain);
         const matchKeyword = !keyword || 
           row.dept.toLowerCase().includes(keyword) || 
           row.system.toLowerCase().includes(keyword) || 
@@ -313,9 +433,7 @@
           responsive: true,
           maintainAspectRatio: false,
           layout: {
-            padding: {
-              top: 25
-            }
+            padding: { top: 25 }
           },
           plugins: {
             legend: { display: false },
@@ -323,10 +441,7 @@
               anchor: 'end',
               align: 'top',
               color: '#334155',
-              font: {
-                weight: 'bold',
-                size: 12
-              },
+              font: { weight: 'bold', size: 12 },
               formatter: function(value) {
                 return value > 0 ? value.toLocaleString() : '';
               }
@@ -343,18 +458,16 @@
       });
     }
 
-    // 事件監聽
-    [filterQuotaType, filterYear, filterDept, filterSystem, filterDomain].forEach(elem => {
-      elem.addEventListener('change', updateDisplay);
-    });
+    // 關鍵字搜尋輸入事件
     searchInput.addEventListener('input', updateDisplay);
 
+    // 重置所有篩選
     resetBtn.addEventListener('click', () => {
-      filterQuotaType.value = '';
-      filterYear.value = '';
-      filterDept.value = '';
-      filterSystem.value = '';
-      filterDomain.value = '';
+      resetMultiSelectComponent('msQuotaType', '全部類別');
+      resetMultiSelectComponent('msYear', '全部學年度');
+      resetMultiSelectComponent('msDept', '全部系所');
+      resetMultiSelectComponent('msSystem', '全部學制');
+      resetMultiSelectComponent('msDomain', '全部領域');
       searchInput.value = '';
       updateDisplay();
     });
