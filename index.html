@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>歷年各所系科招生名額查詢系統</title>
+  <!-- Tailwind CSS 畫面美化 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- PapaParse 用於讀取與解析 CSV -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <!-- Chart.js 用於繪製歷年趨勢圖 -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-slate-50 min-h-screen py-8 px-4 font-sans text-slate-800">
+
+  <div class="max-w-7xl mx-auto space-y-6">
+    
+    <!-- 標題 -->
+    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 text-center">
+      <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">歷年各所系科名額查詢系統</h1>
+      <p class="text-sm text-slate-500">涵蓋招生名額、擴充名額與外加名額之多維度統計與趨勢分析</p>
+    </div>
+
+    <!-- 篩選控制面板 -->
+    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+      <h2 class="text-lg font-bold mb-4 text-slate-700 flex items-center gap-2">
+        🔍 資料篩選器
+      </h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        
+        <!-- 1. 名額類別 -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">名額類別</label>
+          <select id="filterQuotaType" class="w-full p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <option value="">全部類別</option>
+          </select>
+        </div>
+
+        <!-- 2. 開設系所名稱 -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">開設系所名稱</label>
+          <select id="filterDept" class="w-full p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <option value="">全部系所</option>
+          </select>
+        </div>
+
+        <!-- 3. 學制 -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">學制</label>
+          <select id="filterSystem" class="w-full p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <option value="">全部學制</option>
+          </select>
+        </div>
+
+        <!-- 4. 領域別 -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">領域別</label>
+          <select id="filterDomain" class="w-full p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <option value="">全部領域</option>
+          </select>
+        </div>
+
+        <!-- 5. 學年度 -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">學年度</label>
+          <select id="filterYear" class="w-full p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <option value="">全部學年度</option>
+          </select>
+        </div>
+
+        <!-- 6. 關鍵字搜尋 -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">關鍵字搜尋</label>
+          <input type="text" id="searchInput" placeholder="搜尋系所或關鍵字..." class="w-full p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+        </div>
+
+      </div>
+
+      <!-- 重置按鈕 -->
+      <div class="mt-4 flex justify-end">
+        <button id="resetBtn" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-sm font-medium rounded-lg transition-colors">
+          重置所有篩選
+        </button>
+      </div>
+    </div>
+
+    <!-- 統計小卡 -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div class="bg-blue-600 text-white p-5 rounded-xl shadow-sm">
+        <div class="text-xs opacity-80 mb-1">篩選條件下總名額</div>
+        <div id="statTotalQuota" class="text-3xl font-extrabold">0</div>
+      </div>
+      <div class="bg-slate-800 text-white p-5 rounded-xl shadow-sm">
+        <div class="text-xs opacity-80 mb-1">符合資料筆數</div>
+        <div id="statRowCount" class="text-3xl font-extrabold">0</div>
+      </div>
+      <div class="bg-teal-600 text-white p-5 rounded-xl shadow-sm">
+        <div class="text-xs opacity-80 mb-1">涵蓋系所/班組數量</div>
+        <div id="statDeptCount" class="text-3xl font-extrabold">0</div>
+      </div>
+    </div>
+
+    <!-- 歷年趨勢圖表 -->
+    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+      <h2 class="text-lg font-bold mb-4 text-slate-700">📈 歷年名額變化趨勢圖</h2>
+      <div class="relative h-64 sm:h-80">
+        <canvas id="trendChart"></canvas>
+      </div>
+    </div>
+
+    <!-- 資料表格 -->
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <div class="p-4 border-b border-slate-200 font-bold text-slate-700 flex justify-between items-center">
+        <span>📋 詳細資料明細</span>
+        <span id="tableInfo" class="text-xs text-slate-500"></span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left text-slate-600">
+          <thead class="text-xs text-slate-700 uppercase bg-slate-100 border-b border-slate-200">
+            <tr>
+              <th class="px-4 py-3">學年度</th>
+              <th class="px-4 py-3">名額類別</th>
+              <th class="px-4 py-3">開設系所名稱</th>
+              <th class="px-4 py-3">學制</th>
+              <th class="px-4 py-3 text-right">名額</th>
+              <th class="px-4 py-3">領域別</th>
+            </tr>
+          </thead>
+          <tbody id="dataTableBody">
+            <tr>
+              <td colspan="6" class="px-4 py-8 text-center text-slate-400">資料載入中...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    let rawData = [];
+    let myChart = null;
+
+    // DOM 元素
+    const filterQuotaType = document.getElementById('filterQuotaType');
+    const filterDept = document.getElementById('filterDept');
+    const filterSystem = document.getElementById('filterSystem');
+    const filterDomain = document.getElementById('filterDomain');
+    const filterYear = document.getElementById('filterYear');
+    const searchInput = document.getElementById('searchInput');
+    const resetBtn = document.getElementById('resetBtn');
+
+    const statTotalQuota = document.getElementById('statTotalQuota');
+    const statRowCount = document.getElementById('statRowCount');
+    const statDeptCount = document.getElementById('statDeptCount');
+    const dataTableBody = document.getElementById('dataTableBody');
+    const tableInfo = document.getElementById('tableInfo');
+
+    // 載入 CSV 檔案
+    Papa.parse('data.csv', {
+      download: true,
+      header: true,
+      skipEmptyLines: true,
+      complete: function(results) {
+        rawData = results.data.map(row => ({
+          year: (row['學年度'] || '').toString().trim(),
+          quotaType: (row['名額類別'] || row['類別'] || '').toString().trim(),
+          dept: (row['開設系所名稱'] || '').toString().trim(),
+          system: (row['學制'] || '').toString().trim(),
+          quota: parseInt(row['名額'] || '0', 10),
+          domain: (row['領域別'] || '').toString().trim()
+        }));
+
+        initDropdowns();
+        updateDisplay();
+      },
+      error: function(err) {
+        dataTableBody.innerHTML = `<tr><td colspan="6" class="px-4 py-8 text-center text-red-500">無法讀取 data.csv，請確認檔案已放置於同一目錄下。</td></tr>`;
+      }
+    });
+
+    // 初始化下拉選單選項
+    function initDropdowns() {
+      populateOptions(filterQuotaType, [...new Set(rawData.map(d => d.quotaType))].sort());
+      populateOptions(filterDept, [...new Set(rawData.map(d => d.dept))].sort());
+      populateOptions(filterSystem, [...new Set(rawData.map(d => d.system))].sort());
+      populateOptions(filterDomain, [...new Set(rawData.map(d => d.domain))].sort());
+      populateOptions(filterYear, [...new Set(rawData.map(d => d.year))].sort((a, b) => b - a));
+    }
+
+    function populateOptions(selectElem, values) {
+      values.forEach(val => {
+        if (val) {
+          const opt = document.createElement('option');
+          opt.value = val;
+          opt.textContent = val;
+          selectElem.appendChild(opt);
+        }
+      });
+    }
+
+    // 篩選邏輯
+    function getFilteredData() {
+      const selectedType = filterQuotaType.value;
+      const selectedDept = filterDept.value;
+      const selectedSystem = filterSystem.value;
+      const selectedDomain = filterDomain.value;
+      const selectedYear = filterYear.value;
+      const keyword = searchInput.value.toLowerCase().trim();
+
+      return rawData.filter(row => {
+        const matchType = !selectedType || row.quotaType === selectedType;
+        const matchDept = !selectedDept || row.dept === selectedDept;
+        const matchSystem = !selectedSystem || row.system === selectedSystem;
+        const matchDomain = !selectedDomain || row.domain === selectedDomain;
+        const matchYear = !selectedYear || row.year === selectedYear;
+        const matchKeyword = !keyword || 
+          row.dept.toLowerCase().includes(keyword) || 
+          row.system.toLowerCase().includes(keyword) || 
+          row.domain.toLowerCase().includes(keyword) ||
+          row.quotaType.toLowerCase().includes(keyword) ||
+          row.year.includes(keyword);
+
+        return matchType && matchDept && matchSystem && matchDomain && matchYear && matchKeyword;
+      });
+    }
+
+    // 更新畫面
+    function updateDisplay() {
+      const filtered = getFilteredData();
+
+      // 1. 更新統計卡
+      const totalQuota = filtered.reduce((sum, r) => sum + (isNaN(r.quota) ? 0 : r.quota), 0);
+      const uniqueDepts = new Set(filtered.map(r => r.dept)).size;
+
+      statTotalQuota.textContent = totalQuota.toLocaleString();
+      statRowCount.textContent = filtered.length.toLocaleString();
+      statDeptCount.textContent = uniqueDepts.toLocaleString();
+      tableInfo.textContent = `顯示 ${filtered.length} 筆資料`;
+
+      // 2. 渲染表格
+      if (filtered.length === 0) {
+        dataTableBody.innerHTML = `<tr><td colspan="6" class="px-4 py-8 text-center text-slate-400">查無符合條件的資料</td></tr>`;
+      } else {
+        dataTableBody.innerHTML = filtered.map(r => `
+          <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+            <td class="px-4 py-3 font-medium text-slate-900">${r.year}</td>
+            <td class="px-4 py-3"><span class="px-2 py-1 rounded text-xs font-semibold ${
+              r.quotaType.includes('招生') ? 'bg-blue-100 text-blue-800' :
+              r.quotaType.includes('擴充') ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
+            }">${r.quotaType}</span></td>
+            <td class="px-4 py-3 font-medium text-blue-700">${r.dept}</td>
+            <td class="px-4 py-3">${r.system}</td>
+            <td class="px-4 py-3 text-right font-bold text-slate-800">${r.quota}</td>
+            <td class="px-4 py-3">${r.domain}</td>
+          </tr>
+        `).join('');
+      }
+
+      // 3. 更新圖表
+      updateChart(filtered);
+    }
+
+    // 繪製歷年趨勢圖
+    function updateChart(filteredData) {
+      const yearMap = {};
+      
+      filteredData.forEach(r => {
+        if (!yearMap[r.year]) yearMap[r.year] = 0;
+        yearMap[r.year] += (isNaN(r.quota) ? 0 : r.quota);
+      });
+
+      const years = Object.keys(yearMap).sort((a, b) => a - b);
+      const quotas = years.map(y => yearMap[y]);
+
+      const ctx = document.getElementById('trendChart').getContext('2d');
+
+      if (myChart) {
+        myChart.destroy();
+      }
+
+      myChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: years.map(y => `${y} 學年度`),
+          datasets: [{
+            label: '總名額',
+            data: quotas,
+            backgroundColor: 'rgba(37, 99, 235, 0.75)',
+            borderColor: 'rgba(37, 99, 235, 1)',
+            borderWidth: 1,
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, ticks: { precision: 0 } }
+          }
+        }
+      });
+    }
+
+    // 事件監聽
+    [filterQuotaType, filterDept, filterSystem, filterDomain, filterYear].forEach(elem => {
+      elem.addEventListener('change', updateDisplay);
+    });
+    searchInput.addEventListener('input', updateDisplay);
+
+    resetBtn.addEventListener('click', () => {
+      filterQuotaType.value = '';
+      filterDept.value = '';
+      filterSystem.value = '';
+      filterDomain.value = '';
+      filterYear.value = '';
+      searchInput.value = '';
+      updateDisplay();
+    });
+  </script>
+</body>
+</html>
