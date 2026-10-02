@@ -3,160 +3,195 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>歷年各所系科招生名額查詢系統</title>
-  <!-- Tailwind CSS 畫面美化 -->
+  <title>校務資料綜合查詢系統 - 招生名額與註冊率</title>
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- PapaParse 用於讀取與解析 CSV -->
+  <!-- PapaParse -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-  <!-- Chart.js 用於繪製歷年趨勢圖 -->
+  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Chart.js DataLabels 插件 -->
+  <!-- Chart.js DataLabels Plugin -->
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
 </head>
-<body class="bg-slate-50 min-h-screen py-8 px-4 font-sans text-slate-800">
+<body class="bg-slate-50 min-h-screen font-sans text-slate-800">
 
-  <div class="max-w-7xl mx-auto space-y-6">
+  <!-- ================= 主系統頁面 ================= -->
+  <div class="max-w-7xl mx-auto space-y-6 py-8 px-4">
     
-    <!-- 標題 -->
-    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 text-center">
-      <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">歷年各所系科名額查詢系統</h1>
-      <p class="text-sm text-slate-500">院所系科學位學程之招生名額、擴充名額與外加名額</p>
-    </div>
-
-    <!-- 篩選控制面板 -->
+    <!-- 頂部頁頭 -->
     <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-      <h2 class="text-lg font-bold mb-4 text-slate-700 flex items-center gap-2">
-        🔍 資料篩選器 <span class="text-xs font-normal text-slate-400">（各選單皆支援複選）</span>
-      </h2>
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4">
-        
-        <!-- 1. 名額類別 (複選) -->
-        <div class="relative multi-select lg:col-span-1" id="msQuotaType">
-          <label class="block text-xs font-semibold text-slate-600 mb-1">名額類別</label>
-          <button type="button" class="ms-btn w-full p-2 border border-slate-300 rounded-lg text-sm bg-white flex justify-between items-center text-slate-700 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <span class="ms-label truncate">全部類別</span>
-            <svg class="w-4 h-4 text-slate-400 shrink-0 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-          </button>
-          <div class="ms-panel hidden absolute z-30 left-0 min-w-full w-max max-w-xs mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-64 overflow-y-auto p-2 text-sm"></div>
-        </div>
+      <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 mb-1">校務分析查詢系統</h1>
+      <p class="text-xs sm:text-sm text-slate-500">提供各學年度招生名額核定數與系所新生註冊率資料查詢</p>
+    </div>
 
-        <!-- 2. 學年度 (複選) -->
-        <div class="relative multi-select lg:col-span-1" id="msYear">
-          <label class="block text-xs font-semibold text-slate-600 mb-1">學年度</label>
-          <button type="button" class="ms-btn w-full p-2 border border-slate-300 rounded-lg text-sm bg-white flex justify-between items-center text-slate-700 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <span class="ms-label truncate">全部學年度</span>
-            <svg class="w-4 h-4 text-slate-400 shrink-0 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-          </button>
-          <div class="ms-panel hidden absolute z-30 left-0 min-w-full w-max max-w-xs mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-64 overflow-y-auto p-2 text-sm"></div>
-        </div>
+    <!-- 分頁導覽按鈕 (Tabs Header) -->
+    <div class="flex border-b border-slate-200 bg-white rounded-t-xl px-4 pt-3 gap-2">
+      <button id="tabBtnQuota" onclick="switchTab('quota')" class="py-3 px-6 text-sm font-bold border-b-2 transition-all flex items-center gap-2 border-blue-600 text-blue-600">
+        📊 招生名額查詢
+      </button>
+      <button id="tabBtnEnroll" onclick="switchTab('enroll')" class="py-3 px-6 text-sm font-bold border-b-2 transition-all flex items-center gap-2 border-transparent text-slate-500 hover:text-slate-700">
+        🎓 新生註冊率查詢
+      </button>
+    </div>
 
-        <!-- 3. 開設系所名稱 (複選 - 加寬佔用 2 欄位) -->
-        <div class="relative multi-select sm:col-span-2 lg:col-span-2" id="msDept">
-          <label class="block text-xs font-semibold text-slate-600 mb-1">開設系所名稱</label>
-          <button type="button" class="ms-btn w-full p-2 border border-slate-300 rounded-lg text-sm bg-white flex justify-between items-center text-slate-700 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <span class="ms-label truncate">全部系所</span>
-            <svg class="w-4 h-4 text-slate-400 shrink-0 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-          </button>
-          <!-- 下拉選單面板自動根據內容最長字串加寬 (min-w-full w-max max-w-md) -->
-          <div class="ms-panel hidden absolute z-30 left-0 min-w-full min-w-[320px] w-max max-w-md mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-72 overflow-y-auto p-2 text-sm"></div>
+    <!-- ================= Tab 1: 招生名額內容 ================= -->
+    <div id="tabQuotaContent" class="space-y-6">
+      <div class="bg-white p-6 rounded-b-xl shadow-sm border border-slate-200 space-y-4">
+        <h2 class="text-lg font-bold text-slate-700">🔍 名額資料篩選器</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">名額類別</label>
+            <select id="qFilterType" class="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500">
+              <option value="">全部類別</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">學年度</label>
+            <select id="qFilterYear" class="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500">
+              <option value="">全部學年度</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">學制</label>
+            <select id="qFilterSystem" class="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500">
+              <option value="">全部學制</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">領域別</label>
+            <select id="qFilterDomain" class="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500">
+              <option value="">全部領域</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">系所關鍵字</label>
+            <input type="text" id="qSearchInput" placeholder="輸入系所名稱..." class="w-full p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
+          </div>
         </div>
-
-        <!-- 4. 學制 (複選) -->
-        <div class="relative multi-select lg:col-span-1" id="msSystem">
-          <label class="block text-xs font-semibold text-slate-600 mb-1">學制</label>
-          <button type="button" class="ms-btn w-full p-2 border border-slate-300 rounded-lg text-sm bg-white flex justify-between items-center text-slate-700 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <span class="ms-label truncate">全部學制</span>
-            <svg class="w-4 h-4 text-slate-400 shrink-0 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-          </button>
-          <div class="ms-panel hidden absolute z-30 left-0 min-w-full w-max max-w-xs mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-64 overflow-y-auto p-2 text-sm"></div>
-        </div>
-
-        <!-- 5. 領域別 (複選) -->
-        <div class="relative multi-select lg:col-span-1" id="msDomain">
-          <label class="block text-xs font-semibold text-slate-600 mb-1">領域別</label>
-          <button type="button" class="ms-btn w-full p-2 border border-slate-300 rounded-lg text-sm bg-white flex justify-between items-center text-slate-700 hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <span class="ms-label truncate">全部領域</span>
-            <svg class="w-4 h-4 text-slate-400 shrink-0 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-          </button>
-          <div class="ms-panel hidden absolute z-30 left-0 min-w-full w-max max-w-xs mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-64 overflow-y-auto p-2 text-sm"></div>
-        </div>
-
-        <!-- 6. 關鍵字搜尋 -->
-        <div class="lg:col-span-1">
-          <label class="block text-xs font-semibold text-slate-600 mb-1">關鍵字搜尋</label>
-          <input type="text" id="searchInput" placeholder="搜尋關鍵字..." class="w-full p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-        </div>
-
       </div>
 
-      <!-- 重置按鈕 -->
-      <div class="mt-4 flex justify-end">
-        <button id="resetBtn" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-sm font-medium rounded-lg transition-colors">
-          重置所有篩選
-        </button>
+      <!-- 名額統計數據 -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="bg-blue-600 text-white p-5 rounded-xl shadow-sm">
+          <div class="text-xs opacity-80 mb-1">總名額計</div>
+          <div id="qStatTotal" class="text-3xl font-extrabold">0</div>
+        </div>
+        <div class="bg-slate-800 text-white p-5 rounded-xl shadow-sm">
+          <div class="text-xs opacity-80 mb-1">符合資料筆數</div>
+          <div id="qStatRows" class="text-3xl font-extrabold">0</div>
+        </div>
+        <div class="bg-teal-600 text-white p-5 rounded-xl shadow-sm">
+          <div class="text-xs opacity-80 mb-1">涵蓋系所數</div>
+          <div id="qStatDepts" class="text-3xl font-extrabold">0</div>
+        </div>
+      </div>
+
+      <!-- 名額圖表 -->
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+        <h2 class="text-lg font-bold mb-4 text-slate-700">📈 歷年招生名額趨勢</h2>
+        <div class="relative h-64 sm:h-80"><canvas id="quotaChart"></canvas></div>
+      </div>
+
+      <!-- 名額表格 -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="p-4 border-b border-slate-200 font-bold text-slate-700 flex justify-between items-center">
+          <span>📋 招生名額明細清單</span>
+          <span id="qTableInfo" class="text-xs text-slate-500"></span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm text-left text-slate-600">
+            <thead class="text-xs text-slate-700 uppercase bg-slate-100 border-b border-slate-200">
+              <tr>
+                <th class="px-4 py-3">學年度</th>
+                <th class="px-4 py-3">名額類別</th>
+                <th class="px-4 py-3">開設系所名稱</th>
+                <th class="px-4 py-3">學制</th>
+                <th class="px-4 py-3 text-right">名額</th>
+                <th class="px-4 py-3">領域別</th>
+              </tr>
+            </thead>
+            <tbody id="qTableBody"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
-    <!-- 名額類別說明卡片 -->
-    <div class="bg-blue-50/70 p-5 rounded-xl border border-blue-100 text-slate-700 space-y-2">
-      <div class="font-bold text-blue-900 text-base flex items-center gap-1.5">
-        📌 名額類別說明：
+    <!-- ================= Tab 2: 新生註冊率內容 ================= -->
+    <div id="tabEnrollContent" class="space-y-6 hidden">
+      <div class="bg-white p-6 rounded-b-xl shadow-sm border border-slate-200 space-y-4">
+        <h2 class="text-lg font-bold text-slate-700">🔍 註冊率資料篩選器</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">學年度</label>
+            <select id="eFilterYear" class="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500">
+              <option value="">全部學年度</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">日間 / 進修</label>
+            <select id="eFilterDayNight" class="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500">
+              <option value="">全部類別</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">學制班別</label>
+            <select id="eFilterClass" class="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500">
+              <option value="">全部班別</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">系所關鍵字搜尋</label>
+            <input type="text" id="eSearchInput" placeholder="搜尋系所名稱..." class="w-full p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
+          </div>
+        </div>
       </div>
-      <ol class="list-decimal list-inside space-y-1.5 text-xs sm:text-sm text-slate-700 pl-1 leading-relaxed">
-        <li><span class="font-semibold text-slate-900">招生名額</span>指教育部核定之總量招生名額</li>
-        <li><span class="font-semibold text-slate-900">擴充名額</span>指教育部核定之擴充半導體、AI、機械領域系所招生名額</li>
-        <li><span class="font-semibold text-slate-900">外加名額</span>指教育部核定之「大專校院智慧科技（AI）及資訊安全碩士人才計畫」外加名額</li>
-      </ol>
-    </div>
 
-    <!-- 統計小卡 -->
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      <div class="bg-blue-600 text-white p-5 rounded-xl shadow-sm">
-        <div class="text-xs opacity-80 mb-1">篩選條件下總名額</div>
-        <div id="statTotalQuota" class="text-3xl font-extrabold">0</div>
+      <!-- 註冊率統計數據卡 -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="bg-indigo-600 text-white p-5 rounded-xl shadow-sm">
+          <div class="text-xs opacity-80 mb-1">篩選條件平均註冊率</div>
+          <div id="eStatAvgRate" class="text-3xl font-extrabold">0%</div>
+        </div>
+        <div class="bg-emerald-600 text-white p-5 rounded-xl shadow-sm">
+          <div class="text-xs opacity-80 mb-1">總實際註冊人數 (C+E)</div>
+          <div id="eStatTotalReg" class="text-3xl font-extrabold">0</div>
+        </div>
+        <div class="bg-slate-700 text-white p-5 rounded-xl shadow-sm">
+          <div class="text-xs opacity-80 mb-1">總核定招生名額 (A)</div>
+          <div id="eStatTotalQuota" class="text-3xl font-extrabold">0</div>
+        </div>
       </div>
-      <div class="bg-slate-800 text-white p-5 rounded-xl shadow-sm">
-        <div class="text-xs opacity-80 mb-1">符合資料筆數</div>
-        <div id="statRowCount" class="text-3xl font-extrabold">0</div>
-      </div>
-      <div class="bg-teal-600 text-white p-5 rounded-xl shadow-sm">
-        <div class="text-xs opacity-80 mb-1">涵蓋系所/班組數量</div>
-        <div id="statDeptCount" class="text-3xl font-extrabold">0</div>
-      </div>
-    </div>
 
-    <!-- 歷年趨勢圖表 -->
-    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-      <h2 class="text-lg font-bold mb-4 text-slate-700">📈 歷年名額變化趨勢圖</h2>
-      <div class="relative h-64 sm:h-80">
-        <canvas id="trendChart"></canvas>
+      <!-- 註冊率趨勢圖表 -->
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+        <h2 class="text-lg font-bold mb-4 text-slate-700">📉 歷年平均註冊率變化 ( % )</h2>
+        <div class="relative h-64 sm:h-80"><canvas id="enrollChart"></canvas></div>
       </div>
-    </div>
 
-    <!-- 資料表格 -->
-    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-      <div class="p-4 border-b border-slate-200 font-bold text-slate-700 flex justify-between items-center">
-        <span>📋 詳細資料明細</span>
-        <span id="tableInfo" class="text-xs text-slate-500"></span>
-      </div>
-      <div class="overflow-x-auto">
-        <table class="w-full text-sm text-left text-slate-600">
-          <thead class="text-xs text-slate-700 uppercase bg-slate-100 border-b border-slate-200">
-            <tr>
-              <th class="px-4 py-3">學年度</th>
-              <th class="px-4 py-3">名額類別</th>
-              <th class="px-4 py-3">開設系所名稱</th>
-              <th class="px-4 py-3">學制</th>
-              <th class="px-4 py-3 text-right">名額</th>
-              <th class="px-4 py-3">領域別</th>
-            </tr>
-          </thead>
-          <tbody id="dataTableBody">
-            <tr>
-              <td colspan="6" class="px-4 py-8 text-center text-slate-400">資料載入中...</td>
-            </tr>
-          </tbody>
-        </table>
+      <!-- 註冊率資料表格 -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="p-4 border-b border-slate-200 font-bold text-slate-700 flex justify-between items-center">
+          <span>📋 系所新生註冊率詳細明細</span>
+          <span id="eTableInfo" class="text-xs text-slate-500"></span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm text-left text-slate-600">
+            <thead class="text-xs text-slate-700 uppercase bg-slate-100 border-b border-slate-200">
+              <tr>
+                <th class="px-3 py-3">學年度</th>
+                <th class="px-3 py-3">系所名稱</th>
+                <th class="px-3 py-3">日間/進修</th>
+                <th class="px-3 py-3">學制班別</th>
+                <th class="px-3 py-3 text-right">核定名額(A)</th>
+                <th class="px-3 py-3 text-right">保留資格(B)</th>
+                <th class="px-3 py-3 text-right">實際註冊(C)</th>
+                <th class="px-3 py-3 text-right">境外註冊(E)</th>
+                <th class="px-3 py-3 text-right">新生註冊率 (%)</th>
+              </tr>
+            </thead>
+            <tbody id="eTableBody"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -165,307 +200,246 @@
   <script>
     Chart.register(ChartDataLabels);
 
-    let rawData = [];
-    let myChart = null;
+    let quotaRawData = [];
+    let enrollRawData = [];
+    let qChartObj = null;
+    let eChartObj = null;
 
-    const searchInput = document.getElementById('searchInput');
-    const resetBtn = document.getElementById('resetBtn');
-
-    const statTotalQuota = document.getElementById('statTotalQuota');
-    const statRowCount = document.getElementById('statRowCount');
-    const statDeptCount = document.getElementById('statDeptCount');
-    const dataTableBody = document.getElementById('dataTableBody');
-    const tableInfo = document.getElementById('tableInfo');
-
-    // 載入 CSV 檔案
-    Papa.parse('data.csv', {
-      download: true,
-      header: true,
-      skipEmptyLines: true,
-      complete: function(results) {
-        rawData = results.data.map(row => ({
-          year: (row['學年度'] || '').toString().trim(),
-          quotaType: (row['名額類別'] || row['類別'] || '').toString().trim(),
-          dept: (row['開設系所名稱'] || '').toString().trim(),
-          system: (row['學制'] || '').toString().trim(),
-          quota: parseInt(row['名額'] || '0', 10),
-          domain: (row['領域別'] || '').toString().trim()
-        }));
-
-        initMultiSelects();
-        updateDisplay();
-      },
-      error: function(err) {
-        dataTableBody.innerHTML = `<tr><td colspan="6" class="px-4 py-8 text-center text-red-500">無法讀取 data.csv，請確認檔案已放置於同一目錄下。</td></tr>`;
-      }
+    // 頁面載入完成後直接讀取資料
+    window.addEventListener('DOMContentLoaded', () => {
+      loadAllData();
     });
 
-    // 初始化所有複選下拉選單
-    function initMultiSelects() {
-      setupMultiSelect('msQuotaType', '全部類別', [...new Set(rawData.map(d => d.quotaType))].sort());
-      setupMultiSelect('msYear', '全部學年度', [...new Set(rawData.map(d => d.year))].sort((a, b) => a - b));
-      setupMultiSelect('msDept', '全部系所', [...new Set(rawData.map(d => d.dept))].sort(), true);
-      setupMultiSelect('msSystem', '全部學制', [...new Set(rawData.map(d => d.system))].sort());
-      setupMultiSelect('msDomain', '全部領域', [...new Set(rawData.map(d => d.domain))].sort());
+    // --- 1. 分頁切換邏輯 ---
+    function switchTab(tab) {
+      const btnQuota = document.getElementById('tabBtnQuota');
+      const btnEnroll = document.getElementById('tabBtnEnroll');
+      const contentQuota = document.getElementById('tabQuotaContent');
+      const contentEnroll = document.getElementById('tabEnrollContent');
+
+      if (tab === 'quota') {
+        btnQuota.className = 'py-3 px-6 text-sm font-bold border-b-2 transition-all flex items-center gap-2 border-blue-600 text-blue-600';
+        btnEnroll.className = 'py-3 px-6 text-sm font-bold border-b-2 transition-all flex items-center gap-2 border-transparent text-slate-500 hover:text-slate-700';
+        contentQuota.classList.remove('hidden');
+        contentEnroll.classList.add('hidden');
+      } else {
+        btnEnroll.className = 'py-3 px-6 text-sm font-bold border-b-2 transition-all flex items-center gap-2 border-indigo-600 text-indigo-600';
+        btnQuota.className = 'py-3 px-6 text-sm font-bold border-b-2 transition-all flex items-center gap-2 border-transparent text-slate-500 hover:text-slate-700';
+        contentEnroll.classList.remove('hidden');
+        contentQuota.classList.add('hidden');
+      }
     }
 
-    // 建立複選元件內部 UI
-    function setupMultiSelect(containerId, defaultLabel, options, hasSearch = false) {
-      const container = document.getElementById(containerId);
-      const btn = container.querySelector('.ms-btn');
-      const panel = container.querySelector('.ms-panel');
+    // --- 2. 資料載入 (Promise.all 同步載入雙檔) ---
+    function loadAllData() {
+      Promise.all([
+        new Promise(res => Papa.parse('data.csv', { download: true, header: true, complete: res })),
+        new Promise(res => Papa.parse('enrollment.csv', { download: true, header: true, complete: res }))
+      ]).then(([quotaRes, enrollRes]) => {
+        // 解析名額資料
+        quotaRawData = quotaRes.data.map(r => ({
+          year: (r['學年度'] || '').toString().trim(),
+          type: (r['名額類別'] || r['類別'] || '').toString().trim(),
+          dept: (r['開設系所名稱'] || '').toString().trim(),
+          system: (r['學制'] || '').toString().trim(),
+          quota: parseInt(r['名額'] || '0', 10),
+          domain: (r['領域別'] || '').toString().trim()
+        })).filter(r => r.year && r.dept);
 
-      // 切換選單顯示/隱藏
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        document.querySelectorAll('.ms-panel').forEach(p => {
-          if (p !== panel) p.classList.add('hidden');
-        });
-        panel.classList.toggle('hidden');
+        // 解析註冊率資料
+        enrollRawData = enrollRes.data.map(r => ({
+          year: (r['學年度'] || '').toString().trim(),
+          dept: (r['系所名稱'] || '').toString().trim(),
+          dayNight: (r['日間/進修'] || '').toString().trim(),
+          systemClass: (r['學制班別'] || '').toString().trim(),
+          quotaA: parseInt(r['總量內核定招生名額(A)'] || '0', 10),
+          reserveB: parseInt(r['新生保留入學資格人數(B)'] || '0', 10),
+          regC: parseInt(r['總量內招生核定名額之實際註冊人數(C)'] || '0', 10),
+          overseaE: parseInt(r['境外(新生)學生實際註冊人數 (E)'] || '0', 10),
+          rate: parseFloat(r['新生註冊率(%)D=〔(C+E)/(A-B+E)〕 * 100%'] || r['新生註冊率(%)'] || 0)
+        })).filter(r => r.year && r.dept);
+
+        initQuotaControls();
+        initEnrollControls();
+        updateQuotaView();
+        updateEnrollView();
+      }).catch(err => {
+        console.error('資料載入錯誤:', err);
+      });
+    }
+
+    // --- 3. 名額 Tab 邏輯 ---
+    function initQuotaControls() {
+      populateSelect('qFilterType', [...new Set(quotaRawData.map(d => d.type))].sort());
+      populateSelect('qFilterYear', [...new Set(quotaRawData.map(d => d.year))].sort((a,b)=>a-b));
+      populateSelect('qFilterSystem', [...new Set(quotaRawData.map(d => d.system))].sort());
+      populateSelect('qFilterDomain', [...new Set(quotaRawData.map(d => d.domain))].sort());
+
+      ['qFilterType', 'qFilterYear', 'qFilterSystem', 'qFilterDomain'].forEach(id => {
+        document.getElementById(id).addEventListener('change', updateQuotaView);
+      });
+      document.getElementById('qSearchInput').addEventListener('input', updateQuotaView);
+    }
+
+    function updateQuotaView() {
+      const type = document.getElementById('qFilterType').value;
+      const year = document.getElementById('qFilterYear').value;
+      const sys = document.getElementById('qFilterSystem').value;
+      const domain = document.getElementById('qFilterDomain').value;
+      const kw = document.getElementById('qSearchInput').value.toLowerCase().trim();
+
+      const filtered = quotaRawData.filter(r => {
+        return (!type || r.type === type) &&
+               (!year || r.year === year) &&
+               (!sys || r.system === sys) &&
+               (!domain || r.domain === domain) &&
+               (!kw || r.dept.toLowerCase().includes(kw));
       });
 
-      panel.addEventListener('click', (e) => e.stopPropagation());
+      const totalQuota = filtered.reduce((s, r) => s + r.quota, 0);
+      document.getElementById('qStatTotal').textContent = totalQuota.toLocaleString();
+      document.getElementById('qStatRows').textContent = filtered.length.toLocaleString();
+      document.getElementById('qStatDepts').textContent = new Set(filtered.map(r => r.dept)).size;
+      document.getElementById('qTableInfo').textContent = `顯示 ${filtered.length} 筆資料`;
 
-      let html = `
-        <div class="flex justify-between items-center px-1 pb-1.5 mb-1.5 border-b border-slate-100 text-xs text-slate-500">
-          <button type="button" class="ms-select-all hover:text-blue-600 font-medium">全選</button>
-          <button type="button" class="ms-clear-all hover:text-red-600 font-medium">清除</button>
-        </div>
-      `;
-
-      if (hasSearch && options.length > 5) {
-        html += `
-          <div class="mb-1.5">
-            <input type="text" placeholder="快速搜尋選項..." class="ms-search w-full p-1.5 border border-slate-200 rounded text-xs focus:outline-none focus:border-blue-500">
-          </div>
-        `;
-      }
-
-      html += `<div class="space-y-1 ms-options-list">`;
-      // 使用 whitespace-nowrap 確保完整名稱不換行、不截斷
-      html += options.map(val => `
-        <label class="ms-item flex items-center gap-2 px-2 py-1.5 hover:bg-slate-100 rounded cursor-pointer text-slate-700 whitespace-nowrap" title="${val}">
-          <input type="checkbox" value="${val}" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500 shrink-0">
-          <span class="text-xs sm:text-sm">${val}</span>
-        </label>
+      const tbody = document.getElementById('qTableBody');
+      tbody.innerHTML = filtered.map(r => `
+        <tr class="border-b border-slate-100 hover:bg-slate-50">
+          <td class="px-4 py-3 font-semibold text-slate-800">${r.year}</td>
+          <td class="px-4 py-3"><span class="px-2 py-0.5 rounded text-xs font-semibold bg-blue-100 text-blue-800">${r.type}</span></td>
+          <td class="px-4 py-3 text-blue-700 font-medium">${r.dept}</td>
+          <td class="px-4 py-3">${r.system}</td>
+          <td class="px-4 py-3 text-right font-bold">${r.quota}</td>
+          <td class="px-4 py-3 text-slate-500">${r.domain}</td>
+        </tr>
       `).join('');
-      html += `</div>`;
 
-      panel.innerHTML = html;
-
-      // 監聽勾選狀態
-      panel.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-        cb.addEventListener('change', () => {
-          updateMultiSelectLabel(container, defaultLabel);
-          updateDisplay();
-        });
-      });
-
-      // 全選
-      panel.querySelector('.ms-select-all').addEventListener('click', () => {
-        panel.querySelectorAll('.ms-item').forEach(item => {
-          if (item.style.display !== 'none') {
-            const cb = item.querySelector('input[type="checkbox"]');
-            cb.checked = true;
-          }
-        });
-        updateMultiSelectLabel(container, defaultLabel);
-        updateDisplay();
-      });
-
-      // 清除
-      panel.querySelector('.ms-clear-all').addEventListener('click', () => {
-        panel.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
-        updateMultiSelectLabel(container, defaultLabel);
-        updateDisplay();
-      });
-
-      // 搜尋功能
-      const searchInputElem = panel.querySelector('.ms-search');
-      if (searchInputElem) {
-        searchInputElem.addEventListener('input', (e) => {
-          const q = e.target.value.toLowerCase();
-          panel.querySelectorAll('.ms-item').forEach(item => {
-            const text = item.textContent.toLowerCase();
-            item.style.display = text.includes(q) ? 'flex' : 'none';
-          });
-        });
-      }
+      renderQuotaChart(filtered);
     }
 
-    // 更新按鈕標籤
-    function updateMultiSelectLabel(container, defaultLabel) {
-      const checked = Array.from(container.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
-      const label = container.querySelector('.ms-label');
-
-      if (checked.length === 0) {
-        label.textContent = defaultLabel;
-        label.title = defaultLabel;
-        label.classList.remove('font-bold', 'text-blue-600');
-      } else if (checked.length === 1) {
-        label.textContent = checked[0];
-        label.title = checked[0];
-        label.classList.add('font-bold', 'text-blue-600');
-      } else {
-        label.textContent = `已選擇 ${checked.length} 項`;
-        label.title = checked.join(', ');
-        label.classList.add('font-bold', 'text-blue-600');
-      }
-    }
-
-    function getSelectedValues(containerId) {
-      const container = document.getElementById(containerId);
-      if (!container) return [];
-      return Array.from(container.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
-    }
-
-    function resetMultiSelectComponent(containerId, defaultLabel) {
-      const container = document.getElementById(containerId);
-      if (!container) return;
-      container.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
-      const searchInputElem = container.querySelector('.ms-search');
-      if (searchInputElem) {
-        searchInputElem.value = '';
-        container.querySelectorAll('.ms-item').forEach(item => item.style.display = 'flex');
-      }
-      updateMultiSelectLabel(container, defaultLabel);
-    }
-
-    // 點擊外部關閉選單
-    document.addEventListener('click', () => {
-      document.querySelectorAll('.ms-panel').forEach(p => p.classList.add('hidden'));
-    });
-
-    // 篩選邏輯
-    function getFilteredData() {
-      const selQuotaTypes = getSelectedValues('msQuotaType');
-      const selYears = getSelectedValues('msYear');
-      const selDepts = getSelectedValues('msDept');
-      const selSystems = getSelectedValues('msSystem');
-      const selDomains = getSelectedValues('msDomain');
-      const keyword = searchInput.value.toLowerCase().trim();
-
-      return rawData.filter(row => {
-        const matchType = selQuotaTypes.length === 0 || selQuotaTypes.includes(row.quotaType);
-        const matchYear = selYears.length === 0 || selYears.includes(row.year);
-        const matchDept = selDepts.length === 0 || selDepts.includes(row.dept);
-        const matchSystem = selSystems.length === 0 || selSystems.includes(row.system);
-        const matchDomain = selDomains.length === 0 || selDomains.includes(row.domain);
-        const matchKeyword = !keyword || 
-          row.dept.toLowerCase().includes(keyword) || 
-          row.system.toLowerCase().includes(keyword) || 
-          row.domain.toLowerCase().includes(keyword) ||
-          row.quotaType.toLowerCase().includes(keyword) ||
-          row.year.includes(keyword);
-
-        return matchType && matchYear && matchDept && matchSystem && matchDomain && matchKeyword;
-      });
-    }
-
-    // 更新數據與畫面
-    function updateDisplay() {
-      const filtered = getFilteredData();
-
-      const totalQuota = filtered.reduce((sum, r) => sum + (isNaN(r.quota) ? 0 : r.quota), 0);
-      const uniqueDepts = new Set(filtered.map(r => r.dept)).size;
-
-      statTotalQuota.textContent = totalQuota.toLocaleString();
-      statRowCount.textContent = filtered.length.toLocaleString();
-      statDeptCount.textContent = uniqueDepts.toLocaleString();
-      tableInfo.textContent = `顯示 ${filtered.length} 筆資料`;
-
-      if (filtered.length === 0) {
-        dataTableBody.innerHTML = `<tr><td colspan="6" class="px-4 py-8 text-center text-slate-400">查無符合條件的資料</td></tr>`;
-      } else {
-        dataTableBody.innerHTML = filtered.map(r => `
-          <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-            <td class="px-4 py-3 font-medium text-slate-900">${r.year}</td>
-            <td class="px-4 py-3"><span class="px-2 py-1 rounded text-xs font-semibold ${
-              r.quotaType.includes('招生') ? 'bg-blue-100 text-blue-800' :
-              r.quotaType.includes('擴充') ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
-            }">${r.quotaType}</span></td>
-            <td class="px-4 py-3 font-medium text-blue-700">${r.dept}</td>
-            <td class="px-4 py-3">${r.system}</td>
-            <td class="px-4 py-3 text-right font-bold text-slate-800">${r.quota}</td>
-            <td class="px-4 py-3">${r.domain}</td>
-          </tr>
-        `).join('');
-      }
-
-      updateChart(filtered);
-    }
-
-    // 繪製圖表
-    function updateChart(filteredData) {
+    function renderQuotaChart(data) {
       const yearMap = {};
-      
-      filteredData.forEach(r => {
-        if (!yearMap[r.year]) yearMap[r.year] = 0;
-        yearMap[r.year] += (isNaN(r.quota) ? 0 : r.quota);
-      });
+      data.forEach(r => yearMap[r.year] = (yearMap[r.year] || 0) + r.quota);
+      const years = Object.keys(yearMap).sort((a,b)=>a-b);
+      const values = years.map(y => yearMap[y]);
 
-      const years = Object.keys(yearMap).sort((a, b) => a - b);
-      const quotas = years.map(y => yearMap[y]);
-
-      const ctx = document.getElementById('trendChart').getContext('2d');
-
-      if (myChart) {
-        myChart.destroy();
-      }
-
-      myChart = new Chart(ctx, {
+      const ctx = document.getElementById('quotaChart').getContext('2d');
+      if (qChartObj) qChartObj.destroy();
+      qChartObj = new Chart(ctx, {
         type: 'bar',
         data: {
           labels: years.map(y => `${y} 學年度`),
+          datasets: [{ label: '招生名額', data: values, backgroundColor: 'rgba(59, 130, 246, 0.85)', borderRadius: 6 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+      });
+    }
+
+    // --- 4. 註冊率 Tab 邏輯 ---
+    function initEnrollControls() {
+      populateSelect('eFilterYear', [...new Set(enrollRawData.map(d => d.year))].sort((a,b)=>a-b));
+      populateSelect('eFilterDayNight', [...new Set(enrollRawData.map(d => d.dayNight))].sort());
+      populateSelect('eFilterClass', [...new Set(enrollRawData.map(d => d.systemClass))].sort());
+
+      ['eFilterYear', 'eFilterDayNight', 'eFilterClass'].forEach(id => {
+        document.getElementById(id).addEventListener('change', updateEnrollView);
+      });
+      document.getElementById('eSearchInput').addEventListener('input', updateEnrollView);
+    }
+
+    function updateEnrollView() {
+      const year = document.getElementById('eFilterYear').value;
+      const dn = document.getElementById('eFilterDayNight').value;
+      const cls = document.getElementById('eFilterClass').value;
+      const kw = document.getElementById('eSearchInput').value.toLowerCase().trim();
+
+      const filtered = enrollRawData.filter(r => {
+        return (!year || r.year === year) &&
+               (!dn || r.dayNight === dn) &&
+               (!cls || r.systemClass === cls) &&
+               (!kw || r.dept.toLowerCase().includes(kw));
+      });
+
+      const totalA = filtered.reduce((s, r) => s + r.quotaA, 0);
+      const totalReg = filtered.reduce((s, r) => s + r.regC + r.overseaE, 0);
+      const avgRate = filtered.length > 0 ? (filtered.reduce((s, r) => s + r.rate, 0) / filtered.length).toFixed(2) : 0;
+
+      document.getElementById('eStatAvgRate').textContent = `${avgRate}%`;
+      document.getElementById('eStatTotalReg').textContent = totalReg.toLocaleString();
+      document.getElementById('eStatTotalQuota').textContent = totalA.toLocaleString();
+      document.getElementById('eTableInfo').textContent = `顯示 ${filtered.length} 筆資料`;
+
+      const tbody = document.getElementById('eTableBody');
+      tbody.innerHTML = filtered.map(r => {
+        const rateColor = r.rate >= 80 ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800';
+        return `
+          <tr class="border-b border-slate-100 hover:bg-slate-50">
+            <td class="px-3 py-3 font-semibold text-slate-800">${r.year}</td>
+            <td class="px-3 py-3 font-medium text-indigo-700">${r.dept}</td>
+            <td class="px-3 py-3">${r.dayNight}</td>
+            <td class="px-3 py-3">${r.systemClass}</td>
+            <td class="px-3 py-3 text-right font-medium">${r.quotaA}</td>
+            <td class="px-3 py-3 text-right text-slate-500">${r.reserveB}</td>
+            <td class="px-3 py-3 text-right text-slate-700 font-semibold">${r.regC}</td>
+            <td class="px-3 py-3 text-right text-slate-700 font-semibold">${r.overseaE}</td>
+            <td class="px-3 py-3 text-right">
+              <span class="px-2 py-1 rounded text-xs font-extrabold ${rateColor}">${r.rate.toFixed(2)}%</span>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      renderEnrollChart(filtered);
+    }
+
+    function renderEnrollChart(data) {
+      const yearMap = {};
+      data.forEach(r => {
+        if (!yearMap[r.year]) yearMap[r.year] = { sum: 0, count: 0 };
+        yearMap[r.year].sum += r.rate;
+        yearMap[r.year].count += 1;
+      });
+
+      const years = Object.keys(yearMap).sort((a,b)=>a-b);
+      const avgRates = years.map(y => (yearMap[y].sum / yearMap[y].count).toFixed(2));
+
+      const ctx = document.getElementById('enrollChart').getContext('2d');
+      if (eChartObj) eChartObj.destroy();
+      eChartObj = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: years.map(y => `${y} 學年度`),
           datasets: [{
-            label: '總名額',
-            data: quotas,
-            backgroundColor: 'rgba(59, 130, 246, 0.85)',
-            borderColor: 'rgba(37, 99, 235, 1)',
-            borderWidth: 1,
-            borderRadius: 6
+            label: '平均註冊率 (%)',
+            data: avgRates,
+            borderColor: 'rgba(79, 70, 229, 1)',
+            backgroundColor: 'rgba(79, 70, 229, 0.1)',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.3
           }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          layout: {
-            padding: { top: 25 }
-          },
-          plugins: {
-            legend: { display: false },
-            datalabels: {
-              anchor: 'end',
-              align: 'top',
-              color: '#334155',
-              font: { weight: 'bold', size: 12 },
-              formatter: function(value) {
-                return value > 0 ? value.toLocaleString() : '';
-              }
-            }
-          },
-          scales: {
-            y: {
-              beginAtZero: true,
-              ticks: { precision: 0 },
-              grace: '12%'
-            }
-          }
+          scales: { y: { min: 0, max: 100 } }
         }
       });
     }
 
-    searchInput.addEventListener('input', updateDisplay);
-
-    resetBtn.addEventListener('click', () => {
-      resetMultiSelectComponent('msQuotaType', '全部類別');
-      resetMultiSelectComponent('msYear', '全部學年度');
-      resetMultiSelectComponent('msDept', '全部系所');
-      resetMultiSelectComponent('msSystem', '全部學制');
-      resetMultiSelectComponent('msDomain', '全部領域');
-      searchInput.value = '';
-      updateDisplay();
-    });
+    function populateSelect(elemId, options) {
+      const sel = document.getElementById(elemId);
+      const defaultOpt = sel.options[0];
+      sel.innerHTML = '';
+      sel.appendChild(defaultOpt);
+      options.forEach(opt => {
+        if (!opt) return;
+        const o = document.createElement('option');
+        o.value = opt;
+        o.textContent = opt;
+        sel.appendChild(o);
+      });
+    }
   </script>
 </body>
 </html>
