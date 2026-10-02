@@ -20,7 +20,7 @@
     
     <!-- 頂部頁頭 -->
     <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-      <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 mb-1">歷年招生名額、註冊率與生師比查詢系統</h1>
+      <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 mb-1">歷年招生名額/註冊率/生師比查詢系統</h1>
       <p class="text-xs sm:text-sm text-slate-500">提供招生名額核定數、系所新生註冊率與生師比數據查詢</p>
     </div>
 
@@ -233,13 +233,13 @@
       </div>
     </div>
 
-    <!-- ================= Tab 3: 生師比內容 (新增) ================= -->
+    <!-- ================= Tab 3: 生師比內容 ================= -->
     <div id="tabRatioContent" class="space-y-6 hidden">
       <div class="bg-white p-6 rounded-b-xl shadow-sm border border-slate-200 space-y-4">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
           <h2 class="text-lg font-bold text-slate-700">🔍 生師比資料篩選器</h2>
           <div class="text-xs text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full w-fit">
-            ℹ️ 資料來源：大專校院校務資訊公開平台
+            ℹ️ 資料來源：教育部總量資源條件標準檢核結果
           </div>
         </div>
 
@@ -324,7 +324,7 @@
 
       <!-- 頁尾備註 -->
       <div class="text-right text-xs text-slate-400 pr-2">
-        資料來源：大專校院校務資訊公開平台
+        資料來源：教育部總量資源條件標準檢核結果
       </div>
     </div>
 
@@ -341,7 +341,6 @@
     let eChartObj = null;
     let rChartObj = null;
 
-    // 儲存各篩選器的多選狀態
     const multiSelectState = {
       qType: [], qYear: [], qSystem: [], qDomain: [], qDept: [],
       eYear: [], eDayNight: [], eClass: [], eDept: [],
@@ -358,7 +357,7 @@
       });
     });
 
-    // --- 1. 分頁切換邏輯 ---
+    // --- 1. 分頁切換 ---
     function switchTab(tab) {
       const btnQuota = document.getElementById('tabBtnQuota');
       const btnEnroll = document.getElementById('tabBtnEnroll');
@@ -368,12 +367,10 @@
       const contentEnroll = document.getElementById('tabEnrollContent');
       const contentRatio = document.getElementById('tabRatioContent');
 
-      // 歸零所有按鈕樣式
       [btnQuota, btnEnroll, btnRatio].forEach(b => {
         b.className = 'py-3 px-6 text-sm font-bold border-b-2 transition-all flex items-center gap-2 border-transparent text-slate-500 hover:text-slate-700 whitespace-nowrap';
       });
 
-      // 隱藏所有內容
       contentQuota.classList.add('hidden');
       contentEnroll.classList.add('hidden');
       contentRatio.classList.add('hidden');
@@ -398,7 +395,7 @@
         new Promise(res => Papa.parse('ratio.csv', { download: true, header: true, complete: res }))
       ]).then(([quotaRes, enrollRes, ratioRes]) => {
         
-        // 1. 解析名額資料
+        // 1. 名額
         quotaRawData = quotaRes.data.map(r => ({
           year: (r['學年度'] || '').toString().trim(),
           type: (r['名額類別'] || r['類別'] || '').toString().trim(),
@@ -408,7 +405,7 @@
           domain: (r['領域別'] || '').toString().trim()
         })).filter(r => r.year && r.dept);
 
-        // 2. 解析註冊率資料
+        // 2. 註冊率
         enrollRawData = enrollRes.data.map(r => {
           const quotaA = parseInt(r['總量內核定招生名額(A)'] || r['核定名額'] || '0', 10);
           const reserveB = parseInt(r['新生保留入學資格人數(B)'] || r['保留人數'] || '0', 10);
@@ -442,17 +439,43 @@
           };
         }).filter(r => r.year && r.dept);
 
-        // 3. 解析生師比資料 (新增)
+        // 3. 生師比（採用動態關鍵字匹配，解決 CSV 特殊符號極端編碼差異）
         ratioRawData = ratioRes.data.map(r => {
+          let year = '', dept = '', teacherStd = 0, teacherCount = 0;
+          let gradRatio = 0, totalRatio = 0, status = '', changeYear = '';
+
+          for (let key in r) {
+            const cleanKey = key.trim();
+            const val = (r[key] || '').toString().trim();
+
+            if (cleanKey.includes('學年度')) {
+              year = val;
+            } else if (cleanKey.includes('系科班別') || cleanKey.includes('系所')) {
+              dept = val;
+            } else if (cleanKey.includes('標準值')) {
+              teacherStd = parseInt(val || '0', 10);
+            } else if (cleanKey.includes('專任教師數') && !cleanKey.includes('標準值')) {
+              teacherCount = parseInt(val || '0', 10);
+            } else if (cleanKey.includes('博碩士')) {
+              gradRatio = parseFloat(val || '0');
+            } else if (cleanKey.includes('生師比') && !cleanKey.includes('博碩士')) {
+              totalRatio = parseFloat(val || '0');
+            } else if (cleanKey.includes('符合')) {
+              status = val;
+            } else if (cleanKey.includes('增設') || cleanKey.includes('停招')) {
+              changeYear = val;
+            }
+          }
+
           return {
-            year: (r['學年度'] || '').toString().trim(),
-            dept: (r['所系科班別名稱'] || r['系所名稱'] || '').toString().trim(),
-            teacherStd: parseInt(r['專任教師數標準值(應≥)'] || r['專任教師數標準值'] || '0', 10),
-            teacherCount: parseInt(r['專任教師數'] || '0', 10),
-            gradRatio: parseFloat(r['博碩士生師比值(應≤15)'] || r['博碩士生師比值'] || '0'),
-            totalRatio: parseFloat(r['生師比值(應≤35)'] || r['生師比值'] || '0'),
-            status: (r['符合與否'] || '').toString().trim(),
-            changeYear: (r['增設停招年度'] || '').toString().trim()
+            year,
+            dept,
+            teacherStd: isNaN(teacherStd) ? 0 : teacherStd,
+            teacherCount: isNaN(teacherCount) ? 0 : teacherCount,
+            gradRatio: isNaN(gradRatio) ? 0 : gradRatio,
+            totalRatio: isNaN(totalRatio) ? 0 : totalRatio,
+            status,
+            changeYear
           };
         }).filter(r => r.year && r.dept);
 
@@ -468,7 +491,7 @@
       });
     }
 
-    // --- 3. 多選選單 UI 元件通用邏輯 ---
+    // --- 3. 多選 UI 通用邏輯 ---
     function toggleMultiSelectMenu(menuId, event) {
       event.stopPropagation();
       const targetMenu = document.getElementById(menuId);
@@ -545,7 +568,7 @@
       }
     }
 
-    // --- 4. 招生名額邏輯 ---
+    // --- 4. 名額邏輯 ---
     function initQuotaControls() {
       const types = [...new Set(quotaRawData.map(d => d.type))].filter(Boolean).sort();
       const years = [...new Set(quotaRawData.map(d => d.year))].filter(Boolean).sort((a,b)=>a-b);
@@ -698,7 +721,7 @@
       });
     }
 
-    // --- 6. 生師比邏輯 (新增) ---
+    // --- 6. 生師比邏輯 ---
     function initRatioControls() {
       const years = [...new Set(ratioRawData.map(d => d.year))].filter(Boolean).sort((a,b)=>a-b);
       const depts = [...new Set(ratioRawData.map(d => d.dept))].filter(Boolean).sort();
@@ -777,9 +800,18 @@
         options: {
           responsive: true, maintainAspectRatio: false,
           plugins: {
-            datalabels: { color: '#7C3AED', font: { size: 13, weight: 'bold' }, align: 'top', formatter: (v) => v }
+            datalabels: {
+              display: true,
+              color: '#7C3AED',
+              font: { size: 13, weight: 'bold' },
+              align: 'top',
+              offset: 4,
+              formatter: (v) => v
+            }
           },
-          scales: { y: { suggestedMin: 0, suggestedMax: 40 } }
+          scales: {
+            y: { suggestedMin: 0, suggestedMax: 40 }
+          }
         }
       });
     }
