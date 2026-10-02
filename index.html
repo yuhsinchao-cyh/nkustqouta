@@ -20,7 +20,7 @@
     
     <!-- 頂部頁頭 -->
     <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-      <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 mb-1">招生名額與註冊率查詢系統</h1>
+      <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 mb-1">歷年招生名額與註冊率查詢系統</h1>
       <p class="text-xs sm:text-sm text-slate-500">提供各學年度招生名額核定數與系所新生註冊率資料查詢</p>
     </div>
 
@@ -39,29 +39,49 @@
       <div class="bg-white p-6 rounded-b-xl shadow-sm border border-slate-200 space-y-4">
         <h2 class="text-lg font-bold text-slate-700">🔍 名額資料篩選器</h2>
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          <div>
+          
+          <!-- 名額類別 多選選單 -->
+          <div class="relative multi-select-container">
             <label class="block text-xs font-semibold text-slate-600 mb-1">名額類別</label>
-            <select id="qFilterType" class="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500">
-              <option value="">全部類別</option>
-            </select>
+            <button type="button" onclick="toggleMultiSelectMenu('qFilterTypeMenu', event)" class="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 text-left flex justify-between items-center shadow-sm">
+              <span id="qFilterTypeLabel" class="truncate text-slate-700">全部類別</span>
+              <svg class="w-4 h-4 text-slate-400 ml-1 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </button>
+            <div id="qFilterTypeMenu" class="multi-select-menu hidden absolute z-30 mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-xl max-h-60 overflow-y-auto p-2 space-y-1">
+            </div>
           </div>
-          <div>
+
+          <!-- 學年度 多選選單 -->
+          <div class="relative multi-select-container">
             <label class="block text-xs font-semibold text-slate-600 mb-1">學年度</label>
-            <select id="qFilterYear" class="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500">
-              <option value="">全部學年度</option>
-            </select>
+            <button type="button" onclick="toggleMultiSelectMenu('qFilterYearMenu', event)" class="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 text-left flex justify-between items-center shadow-sm">
+              <span id="qFilterYearLabel" class="truncate text-slate-700">全部學年度</span>
+              <svg class="w-4 h-4 text-slate-400 ml-1 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </button>
+            <div id="qFilterYearMenu" class="multi-select-menu hidden absolute z-30 mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-xl max-h-60 overflow-y-auto p-2 space-y-1">
+            </div>
           </div>
-          <div>
+
+          <!-- 學制 多選選單 -->
+          <div class="relative multi-select-container">
             <label class="block text-xs font-semibold text-slate-600 mb-1">學制</label>
-            <select id="qFilterSystem" class="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500">
-              <option value="">全部學制</option>
-            </select>
+            <button type="button" onclick="toggleMultiSelectMenu('qFilterSystemMenu', event)" class="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 text-left flex justify-between items-center shadow-sm">
+              <span id="qFilterSystemLabel" class="truncate text-slate-700">全部學制</span>
+              <svg class="w-4 h-4 text-slate-400 ml-1 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </button>
+            <div id="qFilterSystemMenu" class="multi-select-menu hidden absolute z-30 mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-xl max-h-60 overflow-y-auto p-2 space-y-1">
+            </div>
           </div>
-          <div>
+
+          <!-- 領域別 多選選單 -->
+          <div class="relative multi-select-container">
             <label class="block text-xs font-semibold text-slate-600 mb-1">領域別</label>
-            <select id="qFilterDomain" class="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500">
-              <option value="">全部領域</option>
-            </select>
+            <button type="button" onclick="toggleMultiSelectMenu('qFilterDomainMenu', event)" class="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 text-left flex justify-between items-center shadow-sm">
+              <span id="qFilterDomainLabel" class="truncate text-slate-700">全部領域</span>
+              <svg class="w-4 h-4 text-slate-400 ml-1 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </button>
+            <div id="qFilterDomainMenu" class="multi-select-menu hidden absolute z-30 mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-xl max-h-60 overflow-y-auto p-2 space-y-1">
+            </div>
           </div>
 
           <!-- 系所名稱 多選選單 -->
@@ -74,6 +94,7 @@
             <div id="qFilterDeptMenu" class="multi-select-menu hidden absolute z-30 mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-xl max-h-60 overflow-y-auto p-2 space-y-1">
             </div>
           </div>
+
         </div>
       </div>
 
@@ -235,8 +256,12 @@
     let qChartObj = null;
     let eChartObj = null;
 
-    // 儲存多選狀態
+    // 儲存各篩選器的多選狀態
     const multiSelectState = {
+      qType: [],
+      qYear: [],
+      qSystem: [],
+      qDomain: [],
       qDept: [],
       eYear: [],
       eDayNight: [],
@@ -275,7 +300,7 @@
       }
     }
 
-    // --- 2. 資料載入 ( Promise.all 同步載入雙檔 ) ---
+    // --- 2. 資料載入 ---
     function loadAllData() {
       Promise.all([
         new Promise(res => Papa.parse('data.csv', { download: true, header: true, complete: res })),
@@ -291,14 +316,13 @@
           domain: (r['領域別'] || '').toString().trim()
         })).filter(r => r.year && r.dept);
 
-        // 解析註冊率資料 (含防呆公式計算)
+        // 解析註冊率資料
         enrollRawData = enrollRes.data.map(r => {
           const quotaA = parseInt(r['總量內核定招生名額(A)'] || r['核定名額'] || '0', 10);
           const reserveB = parseInt(r['新生保留入學資格人數(B)'] || r['保留人數'] || '0', 10);
           const regC = parseInt(r['總量內招生核定名額之實際註冊人數(C)'] || r['實際註冊人數'] || '0', 10);
           const overseaE = parseInt(r['境外(新生)學生實際註冊人數 (E)'] || r['境外(新生)學生實際註冊人數(E)'] || r['境外註冊人數'] || '0', 10);
 
-          // 1. 嘗試彈性搜尋包含 "註冊率" 的 CSV 欄位
           let rateFromCsv = null;
           for (let key in r) {
             if (key.includes('註冊率')) {
@@ -310,7 +334,6 @@
             }
           }
 
-          // 2. 若 CSV 欄位比對不到，自動依教育部官方公式計算: (C + E) / (A - B + E) * 100
           let calcRate = 0;
           const denominator = (quotaA - reserveB + overseaE);
           if (denominator > 0) {
@@ -426,32 +449,32 @@
 
     // --- 4. 名額 Tab 邏輯 ---
     function initQuotaControls() {
-      populateSelect('qFilterType', [...new Set(quotaRawData.map(d => d.type))].sort());
-      populateSelect('qFilterYear', [...new Set(quotaRawData.map(d => d.year))].sort((a,b)=>a-b));
-      populateSelect('qFilterSystem', [...new Set(quotaRawData.map(d => d.system))].sort());
-      populateSelect('qFilterDomain', [...new Set(quotaRawData.map(d => d.domain))].sort());
+      const types = [...new Set(quotaRawData.map(d => d.type))].filter(Boolean).sort();
+      const years = [...new Set(quotaRawData.map(d => d.year))].filter(Boolean).sort((a,b)=>a-b);
+      const systems = [...new Set(quotaRawData.map(d => d.system))].filter(Boolean).sort();
+      const domains = [...new Set(quotaRawData.map(d => d.domain))].filter(Boolean).sort();
+      const depts = [...new Set(quotaRawData.map(d => d.dept))].filter(Boolean).sort();
 
-      const depts = [...new Set(quotaRawData.map(d => d.dept))].sort();
+      setupMultiSelect('qFilterTypeMenu', types, 'qType', 'qFilterTypeLabel', '全部類別', updateQuotaView);
+      setupMultiSelect('qFilterYearMenu', years, 'qYear', 'qFilterYearLabel', '全部學年度', updateQuotaView);
+      setupMultiSelect('qFilterSystemMenu', systems, 'qSystem', 'qFilterSystemLabel', '全部學制', updateQuotaView);
+      setupMultiSelect('qFilterDomainMenu', domains, 'qDomain', 'qFilterDomainLabel', '全部領域', updateQuotaView);
       setupMultiSelect('qFilterDeptMenu', depts, 'qDept', 'qFilterDeptLabel', '全部系所', updateQuotaView);
-
-      ['qFilterType', 'qFilterYear', 'qFilterSystem', 'qFilterDomain'].forEach(id => {
-        document.getElementById(id).addEventListener('change', updateQuotaView);
-      });
     }
 
     function updateQuotaView() {
-      const type = document.getElementById('qFilterType').value;
-      const year = document.getElementById('qFilterYear').value;
-      const sys = document.getElementById('qFilterSystem').value;
-      const domain = document.getElementById('qFilterDomain').value;
+      const typeSel = multiSelectState.qType;
+      const yearSel = multiSelectState.qYear;
+      const sysSel = multiSelectState.qSystem;
+      const domainSel = multiSelectState.qDomain;
       const deptSel = multiSelectState.qDept;
 
       const filtered = quotaRawData.filter(r => {
-        return (!type || r.type === type) &&
-               (!year || r.year === year) &&
-               (!sys || r.system === sys) &&
-               (!domain || r.domain === domain) &&
-               (deptSel.includes(r.dept));
+        return typeSel.includes(r.type) &&
+               yearSel.includes(r.year) &&
+               sysSel.includes(r.system) &&
+               domainSel.includes(r.domain) &&
+               deptSel.includes(r.dept);
       });
 
       const totalQuota = filtered.reduce((s, r) => s + r.quota, 0);
@@ -495,10 +518,10 @@
 
     // --- 5. 註冊率 Tab 邏輯 ---
     function initEnrollControls() {
-      const years = [...new Set(enrollRawData.map(d => d.year))].sort((a,b)=>a-b);
-      const dayNights = [...new Set(enrollRawData.map(d => d.dayNight))].sort();
-      const classes = [...new Set(enrollRawData.map(d => d.systemClass))].sort();
-      const depts = [...new Set(enrollRawData.map(d => d.dept))].sort();
+      const years = [...new Set(enrollRawData.map(d => d.year))].filter(Boolean).sort((a,b)=>a-b);
+      const dayNights = [...new Set(enrollRawData.map(d => d.dayNight))].filter(Boolean).sort();
+      const classes = [...new Set(enrollRawData.map(d => d.systemClass))].filter(Boolean).sort();
+      const depts = [...new Set(enrollRawData.map(d => d.dept))].filter(Boolean).sort();
 
       setupMultiSelect('eFilterYearMenu', years, 'eYear', 'eFilterYearLabel', '全部學年度', updateEnrollView);
       setupMultiSelect('eFilterDayNightMenu', dayNights, 'eDayNight', 'eFilterDayNightLabel', '全部類別', updateEnrollView);
@@ -513,17 +536,15 @@
       const deptSel = multiSelectState.eDept;
 
       const filtered = enrollRawData.filter(r => {
-        const matchYear = yearSel.includes(r.year);
-        const matchDN = dnSel.includes(r.dayNight);
-        const matchClass = classSel.includes(r.systemClass);
-        const matchDept = deptSel.includes(r.dept);
-        return matchYear && matchDN && matchClass && matchDept;
+        return yearSel.includes(r.year) &&
+               dnSel.includes(r.dayNight) &&
+               classSel.includes(r.systemClass) &&
+               deptSel.includes(r.dept);
       });
 
       const totalA = filtered.reduce((s, r) => s + r.quotaA, 0);
       const totalReg = filtered.reduce((s, r) => s + r.regC + r.overseaE, 0);
 
-      // 加權平均註冊率計算 (總註冊人數 / 總可註冊名額) 或 算術平均
       const avgRate = filtered.length > 0 
         ? (filtered.reduce((s, r) => s + r.rate, 0) / filtered.length).toFixed(2) 
         : "0.00";
@@ -592,20 +613,6 @@
             y: { min: 0, max: 100 }
           }
         }
-      });
-    }
-
-    function populateSelect(elemId, options) {
-      const sel = document.getElementById(elemId);
-      const defaultOpt = sel.options[0];
-      sel.innerHTML = '';
-      sel.appendChild(defaultOpt);
-      options.forEach(opt => {
-        if (!opt) return;
-        const o = document.createElement('option');
-        o.value = opt;
-        o.textContent = opt;
-        sel.appendChild(o);
       });
     }
   </script>
