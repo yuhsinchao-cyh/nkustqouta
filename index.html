@@ -147,7 +147,13 @@
     <!-- ================= Tab 2: 新生註冊率內容 ================= -->
     <div id="tabEnrollContent" class="space-y-6 hidden">
       <div class="bg-white p-6 rounded-b-xl shadow-sm border border-slate-200 space-y-4">
-        <h2 class="text-lg font-bold text-slate-700">🔍 註冊率資料篩選器</h2>
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+          <h2 class="text-lg font-bold text-slate-700">🔍 註冊率資料篩選器</h2>
+          <div class="text-xs text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full w-fit">
+            ℹ️ 資料來源：大專校院校務資訊公開平台
+          </div>
+        </div>
+
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
           
           <!-- 學年度 多選選單 -->
@@ -243,6 +249,11 @@
             <tbody id="eTableBody"></tbody>
           </table>
         </div>
+      </div>
+
+      <!-- 頁尾備註 -->
+      <div class="text-right text-xs text-slate-400 pr-2">
+        資料來源：大專校院校務資訊公開平台
       </div>
     </div>
 
