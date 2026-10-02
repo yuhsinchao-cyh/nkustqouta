@@ -20,7 +20,7 @@
     
     <!-- 頂部頁頭 -->
     <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-      <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 mb-1">歷年招生名額/註冊率/生師比查詢系統</h1>
+      <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 mb-1">招生名額/註冊率/生師比查詢系統</h1>
       <p class="text-xs sm:text-sm text-slate-500">提供招生名額核定數、系所新生註冊率與生師比數據查詢</p>
     </div>
 
@@ -244,7 +244,6 @@
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <!-- 學年度 多選 -->
           <div class="relative multi-select-container">
             <label class="block text-xs font-semibold text-slate-600 mb-1">學年度</label>
             <button type="button" onclick="toggleMultiSelectMenu('rFilterYearMenu', event)" class="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 text-left flex justify-between items-center shadow-sm">
@@ -254,7 +253,6 @@
             <div id="rFilterYearMenu" class="multi-select-menu hidden absolute z-30 mt-1 w-full min-w-[220px] bg-white border border-slate-200 rounded-lg shadow-xl p-2 space-y-1"></div>
           </div>
 
-          <!-- 系所名稱 多選 -->
           <div class="relative multi-select-container">
             <label class="block text-xs font-semibold text-slate-600 mb-1">所系科班別名稱</label>
             <button type="button" onclick="toggleMultiSelectMenu('rFilterDeptMenu', event)" class="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 text-left flex justify-between items-center shadow-sm">
@@ -264,7 +262,6 @@
             <div id="rFilterDeptMenu" class="multi-select-menu hidden absolute z-30 mt-1 w-full sm:w-80 bg-white border border-slate-200 rounded-lg shadow-xl p-2 space-y-1"></div>
           </div>
 
-          <!-- 符合與否 多選 -->
           <div class="relative multi-select-container">
             <label class="block text-xs font-semibold text-slate-600 mb-1">符合與否</label>
             <button type="button" onclick="toggleMultiSelectMenu('rFilterStatusMenu', event)" class="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 text-left flex justify-between items-center shadow-sm">
@@ -276,7 +273,6 @@
         </div>
       </div>
 
-      <!-- 生師比統計數據卡 -->
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div class="bg-violet-600 text-white p-5 rounded-xl shadow-sm">
           <div class="text-xs opacity-80 mb-1">平均生師比值 (應≤35)</div>
@@ -292,13 +288,11 @@
         </div>
       </div>
 
-      <!-- 生師比趨勢圖表 -->
       <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
         <h2 class="text-lg font-bold mb-4 text-slate-700">📈 歷年平均生師比變化 (應 ≤ 35)</h2>
         <div class="relative h-64 sm:h-80"><canvas id="ratioChart"></canvas></div>
       </div>
 
-      <!-- 生師比資料表格 -->
       <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         <div class="p-4 border-b border-slate-200 font-bold text-slate-700 flex justify-between items-center">
           <span>📋 系所生師比詳細明細</span>
@@ -322,7 +316,6 @@
         </div>
       </div>
 
-      <!-- 頁尾備註 -->
       <div class="text-right text-xs text-slate-400 pr-2">
         資料來源：教育部總量資源條件標準檢核結果
       </div>
@@ -346,6 +339,9 @@
       eYear: [], eDayNight: [], eClass: [], eDept: [],
       rYear: [], rDept: [], rStatus: []
     };
+
+    // 通用字串徹底清理函式 (移除 \r, \n, 換行與前後多餘空格)
+    const cleanStr = (str) => (str || '').toString().replace(/[\r\n\t]/g, '').trim();
 
     window.addEventListener('DOMContentLoaded', () => {
       loadAllData();
@@ -396,26 +392,29 @@
       ]).then(([quotaRes, enrollRes, ratioRes]) => {
         
         // 1. 名額
-        quotaRawData = quotaRes.data.map(r => ({
-          year: (r['學年度'] || '').toString().trim(),
-          type: (r['名額類別'] || r['類別'] || '').toString().trim(),
-          dept: (r['開設系所名稱'] || '').toString().trim(),
-          system: (r['學制'] || '').toString().trim(),
-          quota: parseInt(r['名額'] || '0', 10),
-          domain: (r['領域別'] || '').toString().trim()
-        })).filter(r => r.year && r.dept);
+        quotaRawData = quotaRes.data.map(r => {
+          const quotaVal = parseInt(cleanStr(r['名額']).replace(/,/g, '') || '0', 10);
+          return {
+            year: cleanStr(r['學年度']),
+            type: cleanStr(r['名額類別'] || r['類別']),
+            dept: cleanStr(r['開設系所名稱']),
+            system: cleanStr(r['學制']),
+            quota: isNaN(quotaVal) ? 0 : quotaVal,
+            domain: cleanStr(r['領域別'])
+          };
+        }).filter(r => r.year && r.dept);
 
         // 2. 註冊率
         enrollRawData = enrollRes.data.map(r => {
-          const quotaA = parseInt(r['總量內核定招生名額(A)'] || r['核定名額'] || '0', 10);
-          const reserveB = parseInt(r['新生保留入學資格人數(B)'] || r['保留人數'] || '0', 10);
-          const regC = parseInt(r['總量內招生核定名額之實際註冊人數(C)'] || r['實際註冊人數'] || '0', 10);
-          const overseaE = parseInt(r['境外(新生)學生實際註冊人數 (E)'] || r['境外(新生)學生實際註冊人數(E)'] || r['境外註冊人數'] || '0', 10);
+          const quotaA = parseInt(cleanStr(r['總量內核定招生名額(A)'] || r['核定名額']).replace(/,/g, '') || '0', 10);
+          const reserveB = parseInt(cleanStr(r['新生保留入學資格人數(B)'] || r['保留人數']).replace(/,/g, '') || '0', 10);
+          const regC = parseInt(cleanStr(r['總量內招生核定名額之實際註冊人數(C)'] || r['實際註冊人數']).replace(/,/g, '') || '0', 10);
+          const overseaE = parseInt(cleanStr(r['境外(新生)學生實際註冊人數 (E)'] || r['境外(新生)學生實際註冊人數(E)'] || r['境外註冊人數']).replace(/,/g, '') || '0', 10);
 
           let rateFromCsv = null;
           for (let key in r) {
             if (key.includes('註冊率')) {
-              const val = parseFloat((r[key] || '').toString().replace(/%/g, '').trim());
+              const val = parseFloat(cleanStr(r[key]).replace(/%/g, ''));
               if (!isNaN(val) && val > 0) {
                 rateFromCsv = val;
                 break;
@@ -430,32 +429,32 @@
           }
 
           return {
-            year: (r['學年度'] || '').toString().trim(),
-            dept: (r['系所名稱'] || r['開設系所名稱'] || '').toString().trim(),
-            dayNight: (r['日間/進修'] || '').toString().trim(),
-            systemClass: (r['學制班別'] || '').toString().trim(),
+            year: cleanStr(r['學年度']),
+            dept: cleanStr(r['系所名稱'] || r['開設系所名稱']),
+            dayNight: cleanStr(r['日間/進修']),
+            systemClass: cleanStr(r['學制班別']),
             quotaA, reserveB, regC, overseaE,
             rate: rateFromCsv !== null ? rateFromCsv : calcRate
           };
         }).filter(r => r.year && r.dept);
 
-        // 3. 生師比（動態欄位關鍵字解析）
+        // 3. 生師比
         ratioRawData = ratioRes.data.map(r => {
           let year = '', dept = '', teacherStd = 0, teacherCount = 0;
           let gradRatio = 0, totalRatio = 0, status = '', changeYear = '';
 
           for (let key in r) {
-            const cleanKey = key.trim();
-            const val = (r[key] || '').toString().trim();
+            const cleanKey = cleanStr(key);
+            const val = cleanStr(r[key]);
 
             if (cleanKey.includes('學年度')) {
               year = val;
             } else if (cleanKey.includes('系科班別') || cleanKey.includes('系所')) {
               dept = val;
             } else if (cleanKey.includes('標準值')) {
-              teacherStd = parseInt(val || '0', 10);
+              teacherStd = parseInt(val.replace(/,/g, '') || '0', 10);
             } else if (cleanKey.includes('專任教師數') && !cleanKey.includes('標準值')) {
-              teacherCount = parseInt(val || '0', 10);
+              teacherCount = parseInt(val.replace(/,/g, '') || '0', 10);
             } else if (cleanKey.includes('博碩士')) {
               gradRatio = parseFloat(val || '0');
             } else if (cleanKey.includes('生師比') && !cleanKey.includes('博碩士')) {
@@ -491,7 +490,7 @@
       });
     }
 
-    // --- 3. 多選 UI 通用邏輯（支援頂部搜尋輸入框） ---
+    // --- 3. 多選 UI 通用邏輯 ---
     function toggleMultiSelectMenu(menuId, event) {
       event.stopPropagation();
       const targetMenu = document.getElementById(menuId);
@@ -504,11 +503,9 @@
       const menu = document.getElementById(menuId);
       menu.innerHTML = '';
 
-      // 1. 頂部固定區域 (包含搜尋框 + 全選)
       const headerDiv = document.createElement('div');
       headerDiv.className = 'pb-2 border-b border-slate-200 mb-1 space-y-1.5';
 
-      // 關鍵字搜尋框
       headerDiv.innerHTML += `
         <div class="relative">
           <input type="text" placeholder="🔍 搜尋名稱關鍵字..." 
@@ -517,7 +514,6 @@
         </div>
       `;
 
-      // 全選 / 全不選 勾選框
       headerDiv.innerHTML += `
         <label class="flex items-center px-1 py-1 hover:bg-slate-100 rounded cursor-pointer text-xs font-bold text-slate-700">
           <input type="checkbox" class="selectAll-cb rounded border-slate-300 text-blue-600 focus:ring-blue-500 mr-2 shrink-0" checked>
@@ -527,12 +523,10 @@
 
       menu.appendChild(headerDiv);
 
-      // 2. 可滾動選項列表區域
       const listDiv = document.createElement('div');
       listDiv.className = 'max-h-52 overflow-y-auto space-y-0.5 pr-1';
       menu.appendChild(listDiv);
 
-      // 載入每個選項
       options.forEach(opt => {
         if (!opt) return;
         const itemDiv = document.createElement('label');
@@ -544,7 +538,6 @@
         listDiv.appendChild(itemDiv);
       });
 
-      // 搜尋即時過濾事件
       const searchInput = headerDiv.querySelector('input');
       if (searchInput) {
         searchInput.addEventListener('input', (e) => {
@@ -552,11 +545,7 @@
           const items = listDiv.querySelectorAll('.opt-item');
           items.forEach(item => {
             const text = item.textContent.toLowerCase();
-            if (text.includes(keyword)) {
-              item.style.display = 'flex';
-            } else {
-              item.style.display = 'none';
-            }
+            item.style.display = text.includes(keyword) ? 'flex' : 'none';
           });
         });
       }
