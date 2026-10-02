@@ -65,7 +65,7 @@
       <div class="text-right space-y-2">
         <!-- 右上角單位名稱 -->
         <div class="text-sm font-bold text-slate-700 flex items-center justify-end gap-1">
-          <span>🏫 教務處</span>
+          <span>🏫 教務處招生組</span>
         </div>
         <!-- 帳號資訊與登出按鈕 -->
         <div class="flex items-center justify-end gap-2">
@@ -299,18 +299,19 @@
           </div>
         </div>
       </div>
+      <!-- 修正後的三個統計指標卡片 -->
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div class="bg-violet-600 text-white p-5 rounded-xl shadow-sm">
-          <div class="text-xs opacity-80 mb-1">平均生師比值 (一般≤35 / 獨研≤15)</div>
-          <div id="rStatAvgRatio" class="text-3xl font-extrabold">0</div>
+          <div id="rStatLatestRatioTitle" class="text-xs opacity-80 mb-1">最新學年度生師比值</div>
+          <div id="rStatLatestRatio" class="text-3xl font-extrabold">0.00</div>
         </div>
         <div class="bg-teal-600 text-white p-5 rounded-xl shadow-sm">
-          <div class="text-xs opacity-80 mb-1">符合標準系所數 / 符合率</div>
-          <div id="rStatPassInfo" class="text-3xl font-extrabold">0 / 0%</div>
+          <div id="rStatLatestFacultyTitle" class="text-xs opacity-80 mb-1">最新學年度專任教師數</div>
+          <div id="rStatLatestFaculty" class="text-3xl font-extrabold">0</div>
         </div>
         <div class="bg-slate-700 text-white p-5 rounded-xl shadow-sm">
-          <div class="text-xs opacity-80 mb-1">專任教師總人數</div>
-          <div id="rStatTotalFaculty" class="text-3xl font-extrabold">0</div>
+          <div id="rStatLatestStatusTitle" class="text-xs opacity-80 mb-1">最新學年度符合與否</div>
+          <div id="rStatLatestStatus" class="text-3xl font-extrabold">-</div>
         </div>
       </div>
       <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
@@ -862,18 +863,48 @@
         multiSelectState.rStatus.includes(r.status)
       );
 
-      // 🔹 使用 getEffectiveRatio(r) 計算平均生師比
-      const avgRatio = filtered.length > 0 
-        ? (filtered.reduce((s, r) => s + getEffectiveRatio(r), 0) / filtered.length).toFixed(2) 
-        : "0.00";
+      // 🔹 計算「最新學年度」的指標數據
+      if (filtered.length > 0) {
+        // 找出篩選條件下最新的學年度
+        const latestYear = filtered.reduce((max, r) => (parseInt(r.year, 10) > parseInt(max, 10) ? r.year : max), filtered[0].year);
+        const latestData = filtered.filter(r => r.year === latestYear);
 
-      const passCount = filtered.filter(r => r.status === '符合').length;
-      const passRate = filtered.length > 0 ? ((passCount / filtered.length) * 100).toFixed(1) : "0.0";
-      const totalFaculty = filtered.reduce((s, r) => s + r.teacherCount, 0);
+        // 1. 最新學年度生師比值
+        const latestAvgRatio = (latestData.reduce((s, r) => s + getEffectiveRatio(r), 0) / latestData.length).toFixed(2);
+        
+        // 2. 最新學年度專任教師數
+        const latestFaculty = latestData.reduce((s, r) => s + r.teacherCount, 0);
 
-      document.getElementById('rStatAvgRatio').textContent = avgRatio;
-      document.getElementById('rStatPassInfo').textContent = `${passCount} / ${passRate}%`;
-      document.getElementById('rStatTotalFaculty').textContent = totalFaculty.toLocaleString();
+        // 3. 最新學年度符合與否
+        const passCount = latestData.filter(r => r.status === '符合').length;
+        let statusText = '';
+        if (passCount === latestData.length) {
+          statusText = '符合';
+        } else if (passCount === 0) {
+          statusText = '不符合';
+        } else {
+          statusText = `${passCount}/${latestData.length} 符合`;
+        }
+
+        document.getElementById('rStatLatestRatioTitle').textContent = `最新學年度生師比值 (${latestYear}學年)`;
+        document.getElementById('rStatLatestRatio').textContent = latestAvgRatio;
+
+        document.getElementById('rStatLatestFacultyTitle').textContent = `最新學年度專任教師數 (${latestYear}學年)`;
+        document.getElementById('rStatLatestFaculty').textContent = latestFaculty.toLocaleString();
+
+        document.getElementById('rStatLatestStatusTitle').textContent = `最新學年度符合與否 (${latestYear}學年)`;
+        document.getElementById('rStatLatestStatus').textContent = statusText;
+      } else {
+        document.getElementById('rStatLatestRatioTitle').textContent = `最新學年度生師比值`;
+        document.getElementById('rStatLatestRatio').textContent = "0.00";
+
+        document.getElementById('rStatLatestFacultyTitle').textContent = `最新學年度專任教師數`;
+        document.getElementById('rStatLatestFaculty').textContent = "0";
+
+        document.getElementById('rStatLatestStatusTitle').textContent = `最新學年度符合與否`;
+        document.getElementById('rStatLatestStatus').textContent = "-";
+      }
+
       document.getElementById('rTableInfo').textContent = `顯示 ${filtered.length} 筆資料`;
 
       document.getElementById('rTableBody').innerHTML = filtered.map(r => {
@@ -903,7 +934,6 @@
       const yearMap = {};
       data.forEach(r => {
         if (!yearMap[r.year]) yearMap[r.year] = { sum: 0, count: 0 };
-        // 🔹 使用 getEffectiveRatio(r) 進行數值累加
         yearMap[r.year].sum += getEffectiveRatio(r);
         yearMap[r.year].count += 1;
       });
