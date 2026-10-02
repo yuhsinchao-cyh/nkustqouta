@@ -618,8 +618,9 @@
             borderWidth: 3,
             fill: true,
             tension: 0.3,
-            pointRadius: 4,
-            pointHoverRadius: 6
+            pointRadius: 5,
+            pointBackgroundColor: 'rgba(79, 70, 229, 1)',
+            pointHoverRadius: 7
           }]
         },
         options: {
@@ -627,7 +628,15 @@
           maintainAspectRatio: false,
           plugins: {
             datalabels: {
-              display: false
+              display: true,
+              color: '#4F46E5',
+              font: {
+                size: 13,
+                weight: 'bold'
+              },
+              align: 'top',
+              offset: 6,
+              formatter: (val) => `${val}%`
             }
           },
           scales: {
