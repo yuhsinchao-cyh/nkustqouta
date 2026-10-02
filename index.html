@@ -65,7 +65,7 @@
       <div class="text-right space-y-2">
         <!-- 右上角單位名稱 -->
         <div class="text-sm font-bold text-slate-700 flex items-center justify-end gap-1">
-          <span>🏫 教務處招生組</span>
+          <span>🏫 教務處</span>
         </div>
         <!-- 帳號資訊與登出按鈕 -->
         <div class="flex items-center justify-end gap-2">
@@ -136,18 +136,19 @@
         </div>
       </div>
 
+      <!-- 修正後的三個名額統計指標卡片 -->
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div class="bg-blue-600 text-white p-5 rounded-xl shadow-sm">
-          <div class="text-xs opacity-80 mb-1">總名額計</div>
-          <div id="qStatTotal" class="text-3xl font-extrabold">0</div>
+          <div class="text-xs opacity-80 mb-1">總招生名額數</div>
+          <div id="qStatQuota" class="text-3xl font-extrabold">0</div>
         </div>
-        <div class="bg-slate-800 text-white p-5 rounded-xl shadow-sm">
-          <div class="text-xs opacity-80 mb-1">符合資料筆數</div>
-          <div id="qStatRows" class="text-3xl font-extrabold">0</div>
+        <div class="bg-amber-600 text-white p-5 rounded-xl shadow-sm">
+          <div class="text-xs opacity-80 mb-1">總擴充名額數</div>
+          <div id="qStatExpand" class="text-3xl font-extrabold">0</div>
         </div>
-        <div class="bg-teal-600 text-white p-5 rounded-xl shadow-sm">
-          <div class="text-xs opacity-80 mb-1">涵蓋系所數</div>
-          <div id="qStatDepts" class="text-3xl font-extrabold">0</div>
+        <div class="bg-emerald-600 text-white p-5 rounded-xl shadow-sm">
+          <div class="text-xs opacity-80 mb-1">總外加名額數</div>
+          <div id="qStatExtra" class="text-3xl font-extrabold">0</div>
         </div>
       </div>
 
@@ -299,7 +300,6 @@
           </div>
         </div>
       </div>
-      <!-- 修正後的三個統計指標卡片 -->
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div class="bg-violet-600 text-white p-5 rounded-xl shadow-sm">
           <div id="rStatLatestRatioTitle" class="text-xs opacity-80 mb-1">最新學年度生師比值</div>
@@ -710,15 +710,29 @@
         multiSelectState.qDept.includes(r.dept)
       );
 
-      document.getElementById('qStatTotal').textContent = filtered.reduce((s, r) => s + r.quota, 0).toLocaleString();
-      document.getElementById('qStatRows').textContent = filtered.length.toLocaleString();
-      document.getElementById('qStatDepts').textContent = new Set(filtered.map(r => r.dept)).size;
+      // 🔹 計算「總招生名額數」、「總擴充名額數」、「總外加名額數」
+      const totalQuota = filtered
+        .filter(r => r.type === '招生名額' || r.type.includes('招生名額'))
+        .reduce((s, r) => s + r.quota, 0);
+
+      const totalExpand = filtered
+        .filter(r => r.type === '擴充名額' || r.type.includes('擴充'))
+        .reduce((s, r) => s + r.quota, 0);
+
+      const totalExtra = filtered
+        .filter(r => r.type === '外加名額' || r.type.includes('外加'))
+        .reduce((s, r) => s + r.quota, 0);
+
+      document.getElementById('qStatQuota').textContent = totalQuota.toLocaleString();
+      document.getElementById('qStatExpand').textContent = totalExpand.toLocaleString();
+      document.getElementById('qStatExtra').textContent = totalExtra.toLocaleString();
+
       document.getElementById('qTableInfo').textContent = `顯示 ${filtered.length} 筆資料`;
 
       document.getElementById('qTableBody').innerHTML = filtered.map(r => {
         let badgeColor = 'bg-blue-100 text-blue-800';
-        if (r.type === '擴充名額') badgeColor = 'bg-amber-100 text-amber-800';
-        if (r.type === '外加名額') badgeColor = 'bg-emerald-100 text-emerald-800';
+        if (r.type === '擴充名額' || r.type.includes('擴充')) badgeColor = 'bg-amber-100 text-amber-800';
+        if (r.type === '外加名額' || r.type.includes('外加')) badgeColor = 'bg-emerald-100 text-emerald-800';
 
         return `
           <tr class="border-b border-slate-100 hover:bg-slate-50">
@@ -865,17 +879,12 @@
 
       // 🔹 計算「最新學年度」的指標數據
       if (filtered.length > 0) {
-        // 找出篩選條件下最新的學年度
         const latestYear = filtered.reduce((max, r) => (parseInt(r.year, 10) > parseInt(max, 10) ? r.year : max), filtered[0].year);
         const latestData = filtered.filter(r => r.year === latestYear);
 
-        // 1. 最新學年度生師比值
         const latestAvgRatio = (latestData.reduce((s, r) => s + getEffectiveRatio(r), 0) / latestData.length).toFixed(2);
-        
-        // 2. 最新學年度專任教師數
         const latestFaculty = latestData.reduce((s, r) => s + r.teacherCount, 0);
 
-        // 3. 最新學年度符合與否
         const passCount = latestData.filter(r => r.status === '符合').length;
         let statusText = '';
         if (passCount === latestData.length) {
@@ -941,7 +950,6 @@
       const years = Object.keys(yearMap).sort((a,b)=>a-b);
       const avgRatios = years.map(y => (yearMap[y].sum / yearMap[y].count).toFixed(2));
 
-      // 🔹 判斷目前選擇的系所是否均為獨立研究所，並動態顯示標籤說明
       const isOnlyGradDepts = data.length > 0 && data.every(r => gradRatioDepts.some(d => r.dept.includes(d)));
       const datasetLabel = isOnlyGradDepts ? '平均博碩士生師比 (≤15)' : '平均生師比值';
 
