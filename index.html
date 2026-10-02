@@ -26,7 +26,7 @@
       <div>
         <h2 class="text-2xl font-bold text-slate-800 mb-2">查詢系統 - 身份驗證</h2>
         <p class="text-xs text-slate-500 leading-relaxed">
-          本系統資料僅供學校內部查詢使用。<br>
+          本系統資料僅供校內查詢使用。<br>
           請登入國立高雄科技大學教職員電子郵件（<span class="font-bold text-blue-600">@nkust.edu.tw</span>）進行驗證。
         </p>
       </div>
@@ -134,9 +134,21 @@
             <div id="qFilterDeptMenu" class="multi-select-menu hidden absolute z-30 mt-1 w-full sm:w-80 bg-white border border-slate-200 rounded-lg shadow-xl p-2 space-y-1"></div>
           </div>
         </div>
+
+        <!-- 🔹 新增：名額類別說明區塊 -->
+        <div class="pt-3 border-t border-slate-100 text-xs text-slate-600 bg-slate-50/80 p-3.5 rounded-lg border border-slate-200/60 space-y-1">
+          <div class="font-bold text-slate-700 mb-1 flex items-center gap-1">
+            <span>💡 名額類別說明：</span>
+          </div>
+          <ol class="list-decimal list-inside space-y-1 text-slate-600">
+            <li>招生名額指教育部核定之總量招生名額</li>
+            <li>擴充名額指教育部核定之擴充116學年度半導體、AI、機械領域系所招生名額</li>
+            <li>外加名額指教育部核定之「大專校院智慧科技（AI）及資訊安全碩士人才計畫」外加名額</li>
+          </ol>
+        </div>
       </div>
 
-      <!-- 修正後的三個名額統計指標卡片 -->
+      <!-- 三個名額統計指標卡片 -->
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div class="bg-blue-600 text-white p-5 rounded-xl shadow-sm">
           <div class="text-xs opacity-80 mb-1">總招生名額數</div>
@@ -355,10 +367,8 @@
     let eChartObj = null;
     let rChartObj = null;
 
-    // 🔹 定義獨立研究所清單 (強制抓取博碩士生師比 ≤15)
     const gradRatioDepts = ['科技法律研究所', '光電工程研究所'];
 
-    // 🔹 判斷系所應抓取的生師比數據 (獨立研究所抓 gradRatio，一般系所抓 totalRatio)
     function getEffectiveRatio(r) {
       const isGradDept = gradRatioDepts.some(d => r.dept.includes(d));
       return isGradDept ? r.gradRatio : r.totalRatio;
@@ -370,7 +380,6 @@
       rYear: [], rDept: [], rStatus: []
     };
 
-    // --- Google 驗證與身份檢查邏輯 ---
     function parseJwt(token) {
       try {
         const base64Url = token.split('.')[1];
@@ -393,7 +402,6 @@
 
       const email = payload.email.toLowerCase();
       
-      // 驗證信箱域名 (預設高科大 @nkust.edu.tw)
       if (email.endsWith('@nkust.edu.tw')) {
         localStorage.setItem('nkust_user_email', email);
         unlockSystem(email);
@@ -448,7 +456,6 @@
       });
     }
 
-    // --- 分頁切換 ---
     function switchTab(tab) {
       const btnQuota = document.getElementById('tabBtnQuota');
       const btnEnroll = document.getElementById('tabBtnEnroll');
@@ -478,7 +485,6 @@
       }
     }
 
-    // --- 資料載入 ---
     function loadAllData() {
       Promise.all([
         fetchCsv('data.csv'),
@@ -587,7 +593,6 @@
       });
     }
 
-    // --- 多選 UI 通用邏輯 ---
     function toggleMultiSelectMenu(menuId, event) {
       event.stopPropagation();
       const targetMenu = document.getElementById(menuId);
@@ -686,7 +691,6 @@
       }
     }
 
-    // --- 名額邏輯 ---
     function initQuotaControls() {
       const types = [...new Set(quotaRawData.map(d => d.type))].filter(Boolean).sort();
       const years = [...new Set(quotaRawData.map(d => d.year))].filter(Boolean).sort((a,b)=>a-b);
@@ -710,7 +714,6 @@
         multiSelectState.qDept.includes(r.dept)
       );
 
-      // 🔹 計算「總招生名額數」、「總擴充名額數」、「總外加名額數」
       const totalQuota = filtered
         .filter(r => r.type === '招生名額' || r.type.includes('招生名額'))
         .reduce((s, r) => s + r.quota, 0);
@@ -772,7 +775,6 @@
       });
     }
 
-    // --- 註冊率邏輯 ---
     function initEnrollControls() {
       const years = [...new Set(enrollRawData.map(d => d.year))].filter(Boolean).sort((a,b)=>a-b);
       const dayNights = [...new Set(enrollRawData.map(d => d.dayNight))].filter(Boolean).sort();
@@ -859,7 +861,6 @@
       });
     }
 
-    // --- 生師比邏輯 ---
     function initRatioControls() {
       const years = [...new Set(ratioRawData.map(d => d.year))].filter(Boolean).sort((a,b)=>a-b);
       const depts = [...new Set(ratioRawData.map(d => d.dept))].filter(Boolean).sort();
@@ -877,7 +878,6 @@
         multiSelectState.rStatus.includes(r.status)
       );
 
-      // 🔹 計算「最新學年度」的指標數據
       if (filtered.length > 0) {
         const latestYear = filtered.reduce((max, r) => (parseInt(r.year, 10) > parseInt(max, 10) ? r.year : max), filtered[0].year);
         const latestData = filtered.filter(r => r.year === latestYear);
