@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>校務資料綜合查詢系統 - 招生名額 / 註冊率 / 生師比</title>
+  <title>招生名額 / 註冊率 / 生師比</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- PapaParse -->
@@ -239,7 +239,7 @@
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
           <h2 class="text-lg font-bold text-slate-700">🔍 生師比資料篩選器</h2>
           <div class="text-xs text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full w-fit">
-            ℹ️ 資料來源：教育部總量資源條件標準檢核結果
+            ℹ️️ 資料來源：教育部總量資源條件標準檢核結果
           </div>
         </div>
 
@@ -340,8 +340,21 @@
       rYear: [], rDept: [], rStatus: []
     };
 
-    // 通用字串徹底清理函式
-    const cleanStr = (str) => (str || '').toString().replace(/[\r\n\t]/g, '').trim();
+    // 通用字串徹底清理函式 (移除不可見控制字元、BOM 與空白)
+    const cleanStr = (str) => (str || '').toString().replace(/[\r\n\t\ufeff"']/g, '').trim();
+
+    // 安全下載與解析 CSV 工具函式
+    function fetchCsv(url) {
+      return new Promise(resolve => {
+        Papa.parse(url, {
+          download: true,
+          header: true,
+          skipEmptyLines: true,
+          complete: results => resolve(results.data || []),
+          error: () => resolve([])
+        });
+      });
+    }
 
     window.addEventListener('DOMContentLoaded', () => {
       loadAllData();
@@ -383,82 +396,49 @@
       }
     }
 
-    // --- 2. 資料載入與解析 (含多欄位自動轉置) ---
+    // --- 2. 資料載入與解析 (精準讀取 data.csv 的「類別」欄位) ---
     function loadAllData() {
       Promise.all([
-        new Promise(res => Papa.parse('data.csv', { download: true, header: true, complete: res })),
-        new Promise(res => Papa.parse('enrollment.csv', { download: true, header: true, complete: res })),
-        new Promise(res => Papa.parse('ratio.csv', { download: true, header: true, complete: res }))
-      ]).then(([quotaRes, enrollRes, ratioRes]) => {
+        fetchCsv('data.csv'),
+        fetchCsv('enrollment.csv'),
+        fetchCsv('ratio.csv')
+      ]).then(([quotaData, enrollData, ratioData]) => {
         
-        // 1. 名額資料解析 (支援長格式與寬格式多欄位自動轉置)
+        // 1. 名額資料解析 (精準讀取「類別」欄位)
         quotaRawData = [];
-        quotaRes.data.forEach(r => {
-          const year = cleanStr(r['學年度']);
-          const dept = cleanStr(r['開設系所名稱'] || r['系所名稱']);
-          const system = cleanStr(r['學制']);
-          const domain = cleanStr(r['領域別']);
-          if (!year || !dept) return;
 
-          // 判斷是否為長格式（含有「名額類別」或「類別」欄位）
-          const typeColKey = Object.keys(r).find(k => {
+        quotaData.forEach(r => {
+          if (!r) return;
+
+          // 建立清理後的鍵值映射 map
+          const cleanRow = {};
+          Object.keys(r).forEach(k => {
             const ck = cleanStr(k);
-            return ck === '名額類別' || ck === '類別';
+            if (ck) cleanRow[ck] = cleanStr(r[k]);
           });
 
-          if (typeColKey) {
-            // === 長格式 (Long Format) ===
-            const typeStr = cleanStr(r[typeColKey]);
-            const valKey = Object.keys(r).find(k => cleanStr(k) === '名額' || cleanStr(k).includes('人數') || cleanStr(k).includes('名額')) || '名額';
-            const quotaVal = parseInt(cleanStr(r[valKey]).replace(/,/g, '') || '0', 10);
-            
-            quotaRawData.push({
-              year,
-              type: typeStr || '招生名額',
-              dept, system, domain,
-              quota: isNaN(quotaVal) ? 0 : quotaVal
-            });
-          } else {
-            // === 寬格式 (Wide Format) ===
-            // 自動搜尋如「招生名額」、「外加名額」、「擴充名額」等欄位並轉置為獨立項目
-            let processedAny = false;
-            
-            Object.keys(r).forEach(key => {
-              const cleanKey = cleanStr(key);
-              if (['學年度', '開設系所名稱', '系所名稱', '學制', '領域別', 'id'].includes(cleanKey)) return;
+          // 讀取基礎屬性欄位
+          const year = cleanRow['學年度'] || cleanRow['年度'] || cleanRow['年'] || '';
+          const typeStr = cleanRow['類別'] || cleanRow['名額類別'] || cleanRow['招生類別'] || cleanRow['名額項目'] || '招生名額';
+          const dept = cleanRow['開設系所名稱'] || cleanRow['系所名稱'] || cleanRow['系所'] || cleanRow['科系'] || '';
+          const system = cleanRow['學制'] || cleanRow['學制班別'] || '其他';
+          const domain = cleanRow['領域別'] || cleanRow['領域'] || '未分類';
+          
+          const rawQuota = cleanRow['名額'] || cleanRow['人數'] || cleanRow['核定名額'] || '0';
+          const quotaVal = parseInt(rawQuota.replace(/,/g, ''), 10);
 
-              if (cleanKey.includes('名額') || cleanKey.includes('招生')) {
-                const quotaVal = parseInt(cleanStr(r[key]).replace(/,/g, '') || '0', 10);
-                
-                let typeName = cleanKey;
-                if (cleanKey.includes('外加')) typeName = '外加名額';
-                else if (cleanKey.includes('擴充')) typeName = '擴充名額';
-                else if (cleanKey.includes('招生')) typeName = '招生名額';
+          if (!year || !dept) return; // 排除無效標頭或空列
 
-                quotaRawData.push({
-                  year,
-                  type: typeName,
-                  dept, system, domain,
-                  quota: isNaN(quotaVal) ? 0 : quotaVal
-                });
-                processedAny = true;
-              }
-            });
-
-            if (!processedAny) {
-              const quotaVal = parseInt(cleanStr(r['名額'] || '0').replace(/,/g, ''), 10);
-              quotaRawData.push({
-                year,
-                type: '招生名額',
-                dept, system, domain,
-                quota: isNaN(quotaVal) ? 0 : quotaVal
-              });
-            }
-          }
+          quotaRawData.push({
+            year,
+            type: typeStr,
+            dept, system, domain,
+            quota: isNaN(quotaVal) ? 0 : quotaVal
+          });
         });
 
         // 2. 註冊率資料解析
-        enrollRawData = enrollRes.data.map(r => {
+        enrollRawData = enrollData.map(r => {
           const quotaA = parseInt(cleanStr(r['總量內核定招生名額(A)'] || r['核定名額']).replace(/,/g, '') || '0', 10);
           const reserveB = parseInt(cleanStr(r['新生保留入學資格人數(B)'] || r['保留人數']).replace(/,/g, '') || '0', 10);
           const regC = parseInt(cleanStr(r['總量內招生核定名額之實際註冊人數(C)'] || r['實際註冊人數']).replace(/,/g, '') || '0', 10);
@@ -492,7 +472,7 @@
         }).filter(r => r.year && r.dept);
 
         // 3. 生師比資料解析
-        ratioRawData = ratioRes.data.map(r => {
+        ratioRawData = ratioData.map(r => {
           let year = '', dept = '', teacherStd = 0, teacherCount = 0;
           let gradRatio = 0, totalRatio = 0, status = '', changeYear = '';
 
@@ -674,16 +654,22 @@
       document.getElementById('qStatDepts').textContent = new Set(filtered.map(r => r.dept)).size;
       document.getElementById('qTableInfo').textContent = `顯示 ${filtered.length} 筆資料`;
 
-      document.getElementById('qTableBody').innerHTML = filtered.map(r => `
-        <tr class="border-b border-slate-100 hover:bg-slate-50">
-          <td class="px-4 py-3 font-semibold text-slate-800">${r.year}</td>
-          <td class="px-4 py-3"><span class="px-2 py-0.5 rounded text-xs font-semibold bg-blue-100 text-blue-800">${r.type}</span></td>
-          <td class="px-4 py-3 text-blue-700 font-medium">${r.dept}</td>
-          <td class="px-4 py-3">${r.system}</td>
-          <td class="px-4 py-3 text-right font-bold">${r.quota}</td>
-          <td class="px-4 py-3 text-slate-500">${r.domain}</td>
-        </tr>
-      `).join('');
+      document.getElementById('qTableBody').innerHTML = filtered.map(r => {
+        let badgeColor = 'bg-blue-100 text-blue-800';
+        if (r.type === '擴充名額') badgeColor = 'bg-amber-100 text-amber-800';
+        if (r.type === '外加名額') badgeColor = 'bg-emerald-100 text-emerald-800';
+
+        return `
+          <tr class="border-b border-slate-100 hover:bg-slate-50">
+            <td class="px-4 py-3 font-semibold text-slate-800">${r.year}</td>
+            <td class="px-4 py-3"><span class="px-2 py-0.5 rounded text-xs font-semibold ${badgeColor}">${r.type}</span></td>
+            <td class="px-4 py-3 text-blue-700 font-medium">${r.dept}</td>
+            <td class="px-4 py-3">${r.system}</td>
+            <td class="px-4 py-3 text-right font-bold">${r.quota.toLocaleString()}</td>
+            <td class="px-4 py-3 text-slate-500">${r.domain}</td>
+          </tr>
+        `;
+      }).join('');
 
       renderQuotaChart(filtered);
     }
@@ -705,7 +691,7 @@
           responsive: true, maintainAspectRatio: false,
           plugins: {
             legend: { display: false },
-            datalabels: { color: '#FFFFFF', font: { size: 14, weight: 'bold' }, formatter: (v) => v.toLocaleString() }
+            datalabels: { color: '#FFFFFF', font: { size: 13, weight: 'bold' }, formatter: (v) => v.toLocaleString() }
           }
         }
       });
