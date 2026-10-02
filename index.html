@@ -12,16 +12,60 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <!-- Chart.js DataLabels Plugin -->
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+  <!-- Google Sign-In SDK -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body class="bg-slate-50 min-h-screen font-sans text-slate-800">
 
-  <!-- ================= 主系統頁面 ================= -->
-  <div class="max-w-7xl mx-auto space-y-6 py-8 px-4">
+  <!-- ================= 身份驗證彈窗 (遮罩) ================= -->
+  <div id="authModal" class="fixed inset-0 bg-slate-900/90 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="bg-white p-8 rounded-2xl shadow-2xl max-w-md w-full text-center space-y-6 border border-slate-100">
+      <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto text-3xl">
+        🔒
+      </div>
+      <div>
+        <h2 class="text-2xl font-bold text-slate-800 mb-2">查詢系統 - 身份驗證</h2>
+        <p class="text-xs text-slate-500 leading-relaxed">
+          本系統資料僅供內部查詢使用。<br>
+          請登入國立高雄科技大學教職員電子郵件（<span class="font-bold text-blue-600">@nkust.edu.tw</span>）進行驗證。
+        </p>
+      </div>
+
+      <!-- Google 登入按鈕容器 -->
+      <div class="flex justify-center pt-2">
+        <div id="g_id_onload"
+             data-client_id="654251677779-t633vrtlapk6k6dnfps6834hs6f14d3b.apps.googleusercontent.com"
+             data-callback="handleCredentialResponse"
+             data-auto_prompt="false">
+        </div>
+        <div class="g_id_signin" 
+             data-type="standard" 
+             data-size="large" 
+             data-theme="outline" 
+             data-text="sign_in_with" 
+             data-shape="rectangular" 
+             data-logo_alignment="left">
+        </div>
+      </div>
+
+      <!-- 錯誤提示訊息 -->
+      <p id="authError" class="text-xs text-rose-600 font-semibold hidden bg-rose-50 p-3 rounded-lg border border-rose-200"></p>
+    </div>
+  </div>
+
+  <!-- ================= 主系統頁面 (未驗證前會隱藏 content) ================= -->
+  <div id="mainContent" class="max-w-7xl mx-auto space-y-6 py-8 px-4 hidden">
     
     <!-- 頂部頁頭 -->
-    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-      <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 mb-1">招生名額/註冊率/生師比查詢系統</h1>
-      <p class="text-xs sm:text-sm text-slate-500">提供招生名額核定數、系所新生註冊率與生師比數據查詢</p>
+    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex justify-between items-center">
+      <div>
+        <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 mb-1">招生名額/註冊率/生師比查詢系統</h1>
+        <p class="text-xs sm:text-sm text-slate-500">提供招生名額核定數、系所新生註冊率與生師比數據查詢</p>
+      </div>
+      <div class="text-right">
+        <span id="userEmailBadge" class="text-xs bg-slate-100 text-slate-600 px-3 py-1.5 rounded-full font-medium border border-slate-200"></span>
+        <button onclick="logout()" class="ml-2 text-xs text-rose-600 hover:underline">登出</button>
+      </div>
     </div>
 
     <!-- 分頁導覽按鈕 (Tabs Header) -->
@@ -37,12 +81,11 @@
       </button>
     </div>
 
-    <!-- ================= Tab 1: 招生名額內容 ================= -->
+    <!-- Tab 1: 招生名額內容 -->
     <div id="tabQuotaContent" class="space-y-6">
       <div class="bg-white p-6 rounded-b-xl shadow-sm border border-slate-200 space-y-4">
         <h2 class="text-lg font-bold text-slate-700">🔍 名額資料篩選器</h2>
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          
           <div class="relative multi-select-container">
             <label class="block text-xs font-semibold text-slate-600 mb-1">名額類別</label>
             <button type="button" onclick="toggleMultiSelectMenu('qFilterTypeMenu', event)" class="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 text-left flex justify-between items-center shadow-sm">
@@ -51,7 +94,6 @@
             </button>
             <div id="qFilterTypeMenu" class="multi-select-menu hidden absolute z-30 mt-1 w-full min-w-[220px] bg-white border border-slate-200 rounded-lg shadow-xl p-2 space-y-1"></div>
           </div>
-
           <div class="relative multi-select-container">
             <label class="block text-xs font-semibold text-slate-600 mb-1">學年度</label>
             <button type="button" onclick="toggleMultiSelectMenu('qFilterYearMenu', event)" class="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 text-left flex justify-between items-center shadow-sm">
@@ -60,7 +102,6 @@
             </button>
             <div id="qFilterYearMenu" class="multi-select-menu hidden absolute z-30 mt-1 w-full min-w-[220px] bg-white border border-slate-200 rounded-lg shadow-xl p-2 space-y-1"></div>
           </div>
-
           <div class="relative multi-select-container">
             <label class="block text-xs font-semibold text-slate-600 mb-1">學制</label>
             <button type="button" onclick="toggleMultiSelectMenu('qFilterSystemMenu', event)" class="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 text-left flex justify-between items-center shadow-sm">
@@ -69,7 +110,6 @@
             </button>
             <div id="qFilterSystemMenu" class="multi-select-menu hidden absolute z-30 mt-1 w-full min-w-[220px] bg-white border border-slate-200 rounded-lg shadow-xl p-2 space-y-1"></div>
           </div>
-
           <div class="relative multi-select-container">
             <label class="block text-xs font-semibold text-slate-600 mb-1">領域別</label>
             <button type="button" onclick="toggleMultiSelectMenu('qFilterDomainMenu', event)" class="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 text-left flex justify-between items-center shadow-sm">
@@ -78,7 +118,6 @@
             </button>
             <div id="qFilterDomainMenu" class="multi-select-menu hidden absolute z-30 mt-1 w-full min-w-[220px] bg-white border border-slate-200 rounded-lg shadow-xl p-2 space-y-1"></div>
           </div>
-
           <div class="relative multi-select-container">
             <label class="block text-xs font-semibold text-slate-600 mb-1">系所名稱</label>
             <button type="button" onclick="toggleMultiSelectMenu('qFilterDeptMenu', event)" class="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 text-left flex justify-between items-center shadow-sm">
@@ -87,7 +126,6 @@
             </button>
             <div id="qFilterDeptMenu" class="multi-select-menu hidden absolute z-30 mt-1 w-full sm:w-80 bg-white border border-slate-200 rounded-lg shadow-xl p-2 space-y-1"></div>
           </div>
-
         </div>
       </div>
 
@@ -134,16 +172,13 @@
       </div>
     </div>
 
-    <!-- ================= Tab 2: 新生註冊率內容 ================= -->
+    <!-- Tab 2: 註冊率內容 -->
     <div id="tabEnrollContent" class="space-y-6 hidden">
       <div class="bg-white p-6 rounded-b-xl shadow-sm border border-slate-200 space-y-4">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
           <h2 class="text-lg font-bold text-slate-700">🔍 註冊率資料篩選器</h2>
-          <div class="text-xs text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full w-fit">
-            ℹ️ 資料來源：大專校院校務資訊公開平台
-          </div>
+          <div class="text-xs text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full w-fit">ℹ️ 資料來源：大專校院校務資訊公開平台</div>
         </div>
-
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
           <div class="relative multi-select-container">
             <label class="block text-xs font-semibold text-slate-600 mb-1">學年度</label>
@@ -153,7 +188,6 @@
             </button>
             <div id="eFilterYearMenu" class="multi-select-menu hidden absolute z-30 mt-1 w-full min-w-[220px] bg-white border border-slate-200 rounded-lg shadow-xl p-2 space-y-1"></div>
           </div>
-
           <div class="relative multi-select-container">
             <label class="block text-xs font-semibold text-slate-600 mb-1">日間 / 進修</label>
             <button type="button" onclick="toggleMultiSelectMenu('eFilterDayNightMenu', event)" class="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 text-left flex justify-between items-center shadow-sm">
@@ -162,7 +196,6 @@
             </button>
             <div id="eFilterDayNightMenu" class="multi-select-menu hidden absolute z-30 mt-1 w-full min-w-[220px] bg-white border border-slate-200 rounded-lg shadow-xl p-2 space-y-1"></div>
           </div>
-
           <div class="relative multi-select-container">
             <label class="block text-xs font-semibold text-slate-600 mb-1">學制班別</label>
             <button type="button" onclick="toggleMultiSelectMenu('eFilterClassMenu', event)" class="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 text-left flex justify-between items-center shadow-sm">
@@ -171,7 +204,6 @@
             </button>
             <div id="eFilterClassMenu" class="multi-select-menu hidden absolute z-30 mt-1 w-full min-w-[220px] bg-white border border-slate-200 rounded-lg shadow-xl p-2 space-y-1"></div>
           </div>
-
           <div class="relative multi-select-container">
             <label class="block text-xs font-semibold text-slate-600 mb-1">系所名稱</label>
             <button type="button" onclick="toggleMultiSelectMenu('eFilterDeptMenu', event)" class="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 text-left flex justify-between items-center shadow-sm">
@@ -182,7 +214,6 @@
           </div>
         </div>
       </div>
-
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div class="bg-indigo-600 text-white p-5 rounded-xl shadow-sm">
           <div class="text-xs opacity-80 mb-1">篩選條件平均註冊率</div>
@@ -197,12 +228,10 @@
           <div id="eStatTotalQuota" class="text-3xl font-extrabold">0</div>
         </div>
       </div>
-
       <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
         <h2 class="text-lg font-bold mb-4 text-slate-700">📉 歷年平均註冊率變化 ( % )</h2>
         <div class="relative h-64 sm:h-80"><canvas id="enrollChart"></canvas></div>
       </div>
-
       <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         <div class="p-4 border-b border-slate-200 font-bold text-slate-700 flex justify-between items-center">
           <span>📋 系所新生註冊率詳細明細</span>
@@ -227,22 +256,15 @@
           </table>
         </div>
       </div>
-
-      <div class="text-right text-xs text-slate-400 pr-2">
-        資料來源：大專校院校務資訊公開平台
-      </div>
     </div>
 
-    <!-- ================= Tab 3: 生師比內容 ================= -->
+    <!-- Tab 3: 生師比內容 -->
     <div id="tabRatioContent" class="space-y-6 hidden">
       <div class="bg-white p-6 rounded-b-xl shadow-sm border border-slate-200 space-y-4">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
           <h2 class="text-lg font-bold text-slate-700">🔍 生師比資料篩選器</h2>
-          <div class="text-xs text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full w-fit">
-            ℹ️️ 資料來源：教育部總量資源條件標準檢核結果
-          </div>
+          <div class="text-xs text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full w-fit">ℹ 資料來源：教育部總量資源條件標準檢核結果</div>
         </div>
-
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div class="relative multi-select-container">
             <label class="block text-xs font-semibold text-slate-600 mb-1">學年度</label>
@@ -252,7 +274,6 @@
             </button>
             <div id="rFilterYearMenu" class="multi-select-menu hidden absolute z-30 mt-1 w-full min-w-[220px] bg-white border border-slate-200 rounded-lg shadow-xl p-2 space-y-1"></div>
           </div>
-
           <div class="relative multi-select-container">
             <label class="block text-xs font-semibold text-slate-600 mb-1">所系科班別名稱</label>
             <button type="button" onclick="toggleMultiSelectMenu('rFilterDeptMenu', event)" class="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 text-left flex justify-between items-center shadow-sm">
@@ -261,7 +282,6 @@
             </button>
             <div id="rFilterDeptMenu" class="multi-select-menu hidden absolute z-30 mt-1 w-full sm:w-80 bg-white border border-slate-200 rounded-lg shadow-xl p-2 space-y-1"></div>
           </div>
-
           <div class="relative multi-select-container">
             <label class="block text-xs font-semibold text-slate-600 mb-1">符合與否</label>
             <button type="button" onclick="toggleMultiSelectMenu('rFilterStatusMenu', event)" class="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 text-left flex justify-between items-center shadow-sm">
@@ -272,7 +292,6 @@
           </div>
         </div>
       </div>
-
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div class="bg-violet-600 text-white p-5 rounded-xl shadow-sm">
           <div class="text-xs opacity-80 mb-1">平均生師比值 (應≤35)</div>
@@ -287,12 +306,10 @@
           <div id="rStatTotalFaculty" class="text-3xl font-extrabold">0</div>
         </div>
       </div>
-
       <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
         <h2 class="text-lg font-bold mb-4 text-slate-700">📈 歷年平均生師比變化 (應 ≤ 35)</h2>
         <div class="relative h-64 sm:h-80"><canvas id="ratioChart"></canvas></div>
       </div>
-
       <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         <div class="p-4 border-b border-slate-200 font-bold text-slate-700 flex justify-between items-center">
           <span>📋 系所生師比詳細明細</span>
@@ -315,10 +332,6 @@
           </table>
         </div>
       </div>
-
-      <div class="text-right text-xs text-slate-400 pr-2">
-        資料來源：教育部總量資源條件標準檢核結果
-      </div>
     </div>
 
   </div>
@@ -340,10 +353,75 @@
       rYear: [], rDept: [], rStatus: []
     };
 
-    // 通用字串徹底清理函式 (移除不可見控制字元、BOM 與空白)
+    // --- Google 驗證與身份檢查邏輯 ---
+    function parseJwt(token) {
+      try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+        return JSON.parse(jsonPayload);
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function handleCredentialResponse(response) {
+      const payload = parseJwt(response.credential);
+      if (!payload || !payload.email) {
+        showAuthError('無效的憑證，請重新登入！');
+        return;
+      }
+
+      const email = payload.email.toLowerCase();
+      
+      // 驗證信箱域名 (預設高科大 @nkust.edu.tw)
+      if (email.endsWith('@nkust.edu.tw')) {
+        // 驗證成功，寫入 localStorage 紀錄登入狀態
+        localStorage.setItem('nkust_user_email', email);
+        unlockSystem(email);
+      } else {
+        showAuthError(`登入失敗：<span class="font-bold">${email}</span> 非高科大官方信箱 (@nkust.edu.tw)，無法使用本系統！`);
+      }
+    }
+
+    function showAuthError(msg) {
+      const errEl = document.getElementById('authError');
+      errEl.innerHTML = msg;
+      errEl.classList.remove('hidden');
+    }
+
+    function unlockSystem(email) {
+      document.getElementById('authModal').classList.add('hidden');
+      document.getElementById('mainContent').classList.remove('hidden');
+      document.getElementById('userEmailBadge').textContent = `👤 ${email}`;
+      
+      // 解鎖後才下載並發送請求載入數據
+      loadAllData();
+    }
+
+    function logout() {
+      localStorage.removeItem('nkust_user_email');
+      location.reload();
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      // 檢查是否已有暫存登入狀態
+      const savedEmail = localStorage.getItem('nkust_user_email');
+      if (savedEmail && savedEmail.endsWith('@nkust.edu.tw')) {
+        unlockSystem(savedEmail);
+      }
+
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('.multi-select-container')) {
+          document.querySelectorAll('.multi-select-menu').forEach(m => m.classList.add('hidden'));
+        }
+      });
+    });
+
     const cleanStr = (str) => (str || '').toString().replace(/[\r\n\t\ufeff"']/g, '').trim();
 
-    // 安全下載與解析 CSV 工具函式
     function fetchCsv(url) {
       return new Promise(resolve => {
         Papa.parse(url, {
@@ -356,17 +434,7 @@
       });
     }
 
-    window.addEventListener('DOMContentLoaded', () => {
-      loadAllData();
-      
-      document.addEventListener('click', (e) => {
-        if (!e.target.closest('.multi-select-container')) {
-          document.querySelectorAll('.multi-select-menu').forEach(m => m.classList.add('hidden'));
-        }
-      });
-    });
-
-    // --- 1. 分頁切換 ---
+    // --- 分頁切換 ---
     function switchTab(tab) {
       const btnQuota = document.getElementById('tabBtnQuota');
       const btnEnroll = document.getElementById('tabBtnEnroll');
@@ -396,28 +464,23 @@
       }
     }
 
-    // --- 2. 資料載入與解析 (精準讀取 data.csv 的「類別」欄位) ---
+    // --- 資料載入 ---
     function loadAllData() {
       Promise.all([
         fetchCsv('data.csv'),
         fetchCsv('enrollment.csv'),
         fetchCsv('ratio.csv')
       ]).then(([quotaData, enrollData, ratioData]) => {
-        
-        // 1. 名額資料解析 (精準讀取「類別」欄位)
         quotaRawData = [];
 
         quotaData.forEach(r => {
           if (!r) return;
-
-          // 建立清理後的鍵值映射 map
           const cleanRow = {};
           Object.keys(r).forEach(k => {
             const ck = cleanStr(k);
             if (ck) cleanRow[ck] = cleanStr(r[k]);
           });
 
-          // 讀取基礎屬性欄位
           const year = cleanRow['學年度'] || cleanRow['年度'] || cleanRow['年'] || '';
           const typeStr = cleanRow['類別'] || cleanRow['名額類別'] || cleanRow['招生類別'] || cleanRow['名額項目'] || '招生名額';
           const dept = cleanRow['開設系所名稱'] || cleanRow['系所名稱'] || cleanRow['系所'] || cleanRow['科系'] || '';
@@ -427,7 +490,7 @@
           const rawQuota = cleanRow['名額'] || cleanRow['人數'] || cleanRow['核定名額'] || '0';
           const quotaVal = parseInt(rawQuota.replace(/,/g, ''), 10);
 
-          if (!year || !dept) return; // 排除無效標頭或空列
+          if (!year || !dept) return;
 
           quotaRawData.push({
             year,
@@ -437,7 +500,6 @@
           });
         });
 
-        // 2. 註冊率資料解析
         enrollRawData = enrollData.map(r => {
           const quotaA = parseInt(cleanStr(r['總量內核定招生名額(A)'] || r['核定名額']).replace(/,/g, '') || '0', 10);
           const reserveB = parseInt(cleanStr(r['新生保留入學資格人數(B)'] || r['保留人數']).replace(/,/g, '') || '0', 10);
@@ -471,7 +533,6 @@
           };
         }).filter(r => r.year && r.dept);
 
-        // 3. 生師比資料解析
         ratioRawData = ratioData.map(r => {
           let year = '', dept = '', teacherStd = 0, teacherCount = 0;
           let gradRatio = 0, totalRatio = 0, status = '', changeYear = '';
@@ -480,23 +541,14 @@
             const cleanKey = cleanStr(key);
             const val = cleanStr(r[key]);
 
-            if (cleanKey.includes('學年度')) {
-              year = val;
-            } else if (cleanKey.includes('系科班別') || cleanKey.includes('系所')) {
-              dept = val;
-            } else if (cleanKey.includes('標準值')) {
-              teacherStd = parseInt(val.replace(/,/g, '') || '0', 10);
-            } else if (cleanKey.includes('專任教師數') && !cleanKey.includes('標準值')) {
-              teacherCount = parseInt(val.replace(/,/g, '') || '0', 10);
-            } else if (cleanKey.includes('博碩士')) {
-              gradRatio = parseFloat(val || '0');
-            } else if (cleanKey.includes('生師比') && !cleanKey.includes('博碩士')) {
-              totalRatio = parseFloat(val || '0');
-            } else if (cleanKey.includes('符合')) {
-              status = val;
-            } else if (cleanKey.includes('增設') || cleanKey.includes('停招')) {
-              changeYear = val;
-            }
+            if (cleanKey.includes('學年度')) year = val;
+            else if (cleanKey.includes('系科班別') || cleanKey.includes('系所')) dept = val;
+            else if (cleanKey.includes('標準值')) teacherStd = parseInt(val.replace(/,/g, '') || '0', 10);
+            else if (cleanKey.includes('專任教師數') && !cleanKey.includes('標準值')) teacherCount = parseInt(val.replace(/,/g, '') || '0', 10);
+            else if (cleanKey.includes('博碩士')) gradRatio = parseFloat(val || '0');
+            else if (cleanKey.includes('生師比') && !cleanKey.includes('博碩士')) totalRatio = parseFloat(val || '0');
+            else if (cleanKey.includes('符合')) status = val;
+            else if (cleanKey.includes('增設') || cleanKey.includes('停招')) changeYear = val;
           }
 
           return {
@@ -521,7 +573,7 @@
       });
     }
 
-    // --- 3. 多選 UI 通用邏輯 ---
+    // --- 多選 UI 通用邏輯 ---
     function toggleMultiSelectMenu(menuId, event) {
       event.stopPropagation();
       const targetMenu = document.getElementById(menuId);
@@ -536,16 +588,12 @@
 
       const headerDiv = document.createElement('div');
       headerDiv.className = 'pb-2 border-b border-slate-200 mb-1 space-y-1.5';
-
       headerDiv.innerHTML += `
         <div class="relative">
           <input type="text" placeholder="🔍 搜尋名稱關鍵字..." 
                  class="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 text-slate-800 placeholder-slate-400"
                  onclick="event.stopPropagation()">
         </div>
-      `;
-
-      headerDiv.innerHTML += `
         <label class="flex items-center px-1 py-1 hover:bg-slate-100 rounded cursor-pointer text-xs font-bold text-slate-700">
           <input type="checkbox" class="selectAll-cb rounded border-slate-300 text-blue-600 focus:ring-blue-500 mr-2 shrink-0" checked>
           <span>全選 / 全不選</span>
@@ -575,8 +623,7 @@
           const keyword = e.target.value.toLowerCase().trim();
           const items = listDiv.querySelectorAll('.opt-item');
           items.forEach(item => {
-            const text = item.textContent.toLowerCase();
-            item.style.display = text.includes(keyword) ? 'flex' : 'none';
+            item.style.display = item.textContent.toLowerCase().includes(keyword) ? 'flex' : 'none';
           });
         });
       }
@@ -625,7 +672,7 @@
       }
     }
 
-    // --- 4. 名額邏輯 ---
+    // --- 名額邏輯 ---
     function initQuotaControls() {
       const types = [...new Set(quotaRawData.map(d => d.type))].filter(Boolean).sort();
       const years = [...new Set(quotaRawData.map(d => d.year))].filter(Boolean).sort((a,b)=>a-b);
@@ -697,7 +744,7 @@
       });
     }
 
-    // --- 5. 註冊率邏輯 ---
+    // --- 註冊率邏輯 ---
     function initEnrollControls() {
       const years = [...new Set(enrollRawData.map(d => d.year))].filter(Boolean).sort((a,b)=>a-b);
       const dayNights = [...new Set(enrollRawData.map(d => d.dayNight))].filter(Boolean).sort();
@@ -784,7 +831,7 @@
       });
     }
 
-    // --- 6. 生師比邏輯 ---
+    // --- 生師比邏輯 ---
     function initRatioControls() {
       const years = [...new Set(ratioRawData.map(d => d.year))].filter(Boolean).sort((a,b)=>a-b);
       const depts = [...new Set(ratioRawData.map(d => d.dept))].filter(Boolean).sort();
@@ -863,18 +910,9 @@
         options: {
           responsive: true, maintainAspectRatio: false,
           plugins: {
-            datalabels: {
-              display: true,
-              color: '#7C3AED',
-              font: { size: 13, weight: 'bold' },
-              align: 'top',
-              offset: 4,
-              formatter: (v) => v
-            }
+            datalabels: { display: true, color: '#7C3AED', font: { size: 13, weight: 'bold' }, align: 'top', offset: 4, formatter: (v) => v }
           },
-          scales: {
-            y: { suggestedMin: 0, suggestedMax: 40 }
-          }
+          scales: { y: { suggestedMin: 0, suggestedMax: 40 } }
         }
       });
     }
