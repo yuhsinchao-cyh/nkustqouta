@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>校務資料綜合查詢系統 - 招生名額與註冊率</title>
+  <title>歷年招生名額與註冊率查詢系統</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- PapaParse -->
@@ -20,7 +20,7 @@
     
     <!-- 頂部頁頭 -->
     <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-      <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 mb-1">校務分析查詢系統</h1>
+      <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 mb-1">招生名額與註冊率查詢系統</h1>
       <p class="text-xs sm:text-sm text-slate-500">提供各學年度招生名額核定數與系所新生註冊率資料查詢</p>
     </div>
 
@@ -275,7 +275,7 @@
       }
     }
 
-    // --- 2. 資料載入 (Promise.all 同步載入雙檔) ---
+    // --- 2. 資料載入 ( Promise.all 同步載入雙檔 ) ---
     function loadAllData() {
       Promise.all([
         new Promise(res => Papa.parse('data.csv', { download: true, header: true, complete: res })),
@@ -291,18 +291,46 @@
           domain: (r['領域別'] || '').toString().trim()
         })).filter(r => r.year && r.dept);
 
-        // 解析註冊率資料
-        enrollRawData = enrollRes.data.map(r => ({
-          year: (r['學年度'] || '').toString().trim(),
-          dept: (r['系所名稱'] || '').toString().trim(),
-          dayNight: (r['日間/進修'] || '').toString().trim(),
-          systemClass: (r['學制班別'] || '').toString().trim(),
-          quotaA: parseInt(r['總量內核定招生名額(A)'] || '0', 10),
-          reserveB: parseInt(r['新生保留入學資格人數(B)'] || '0', 10),
-          regC: parseInt(r['總量內招生核定名額之實際註冊人數(C)'] || '0', 10),
-          overseaE: parseInt(r['境外(新生)學生實際註冊人數 (E)'] || '0', 10),
-          rate: parseFloat(r['新生註冊率(%)D=〔(C+E)/(A-B+E)〕 * 100%'] || r['新生註冊率(%)'] || 0)
-        })).filter(r => r.year && r.dept);
+        // 解析註冊率資料 (含防呆公式計算)
+        enrollRawData = enrollRes.data.map(r => {
+          const quotaA = parseInt(r['總量內核定招生名額(A)'] || r['核定名額'] || '0', 10);
+          const reserveB = parseInt(r['新生保留入學資格人數(B)'] || r['保留人數'] || '0', 10);
+          const regC = parseInt(r['總量內招生核定名額之實際註冊人數(C)'] || r['實際註冊人數'] || '0', 10);
+          const overseaE = parseInt(r['境外(新生)學生實際註冊人數 (E)'] || r['境外(新生)學生實際註冊人數(E)'] || r['境外註冊人數'] || '0', 10);
+
+          // 1. 嘗試彈性搜尋包含 "註冊率" 的 CSV 欄位
+          let rateFromCsv = null;
+          for (let key in r) {
+            if (key.includes('註冊率')) {
+              const val = parseFloat((r[key] || '').toString().replace(/%/g, '').trim());
+              if (!isNaN(val) && val > 0) {
+                rateFromCsv = val;
+                break;
+              }
+            }
+          }
+
+          // 2. 若 CSV 欄位比對不到，自動依教育部官方公式計算: (C + E) / (A - B + E) * 100
+          let calcRate = 0;
+          const denominator = (quotaA - reserveB + overseaE);
+          if (denominator > 0) {
+            calcRate = ((regC + overseaE) / denominator) * 100;
+          }
+
+          const finalRate = rateFromCsv !== null ? rateFromCsv : calcRate;
+
+          return {
+            year: (r['學年度'] || '').toString().trim(),
+            dept: (r['系所名稱'] || r['開設系所名稱'] || '').toString().trim(),
+            dayNight: (r['日間/進修'] || '').toString().trim(),
+            systemClass: (r['學制班別'] || '').toString().trim(),
+            quotaA,
+            reserveB,
+            regC,
+            overseaE,
+            rate: finalRate
+          };
+        }).filter(r => r.year && r.dept);
 
         initQuotaControls();
         initEnrollControls();
@@ -341,7 +369,6 @@
 
       const selectAllCb = selectAllDiv.querySelector('.selectAll-cb');
 
-      // 建立選項列表
       options.forEach(opt => {
         if (!opt) return;
         const itemDiv = document.createElement('label');
@@ -354,7 +381,7 @@
       });
 
       const optCbs = menu.querySelectorAll('.opt-cb');
-      multiSelectState[stateKey] = options.slice(); // 預設全選
+      multiSelectState[stateKey] = options.slice();
 
       selectAllCb.addEventListener('change', (e) => {
         const isChecked = e.target.checked;
@@ -495,7 +522,11 @@
 
       const totalA = filtered.reduce((s, r) => s + r.quotaA, 0);
       const totalReg = filtered.reduce((s, r) => s + r.regC + r.overseaE, 0);
-      const avgRate = filtered.length > 0 ? (filtered.reduce((s, r) => s + r.rate, 0) / filtered.length).toFixed(2) : 0;
+
+      // 加權平均註冊率計算 (總註冊人數 / 總可註冊名額) 或 算術平均
+      const avgRate = filtered.length > 0 
+        ? (filtered.reduce((s, r) => s + r.rate, 0) / filtered.length).toFixed(2) 
+        : "0.00";
 
       document.getElementById('eStatAvgRate').textContent = `${avgRate}%`;
       document.getElementById('eStatTotalReg').textContent = totalReg.toLocaleString();
@@ -549,13 +580,17 @@
             backgroundColor: 'rgba(79, 70, 229, 0.1)',
             borderWidth: 3,
             fill: true,
-            tension: 0.3
+            tension: 0.3,
+            pointRadius: 4,
+            pointHoverRadius: 6
           }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          scales: { y: { min: 0, max: 100 } }
+          scales: {
+            y: { min: 0, max: 100 }
+          }
         }
       });
     }
