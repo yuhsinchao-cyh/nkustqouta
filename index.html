@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>招生名額/註冊率/生師比</title>
+  <title>招生名額/註冊率/生師比查詢系統</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- PapaParse -->
@@ -26,7 +26,7 @@
       <div>
         <h2 class="text-2xl font-bold text-slate-800 mb-2">查詢系統 - 身份驗證</h2>
         <p class="text-xs text-slate-500 leading-relaxed">
-          本系統資料僅供內部查詢使用。<br>
+          本系統資料僅供學校內部查詢使用。<br>
           請登入國立高雄科技大學教職員電子郵件（<span class="font-bold text-blue-600">@nkust.edu.tw</span>）進行驗證。
         </p>
       </div>
@@ -34,7 +34,7 @@
       <!-- Google 登入按鈕容器 -->
       <div class="flex justify-center pt-2">
         <div id="g_id_onload"
-             data-client_id="654251677779-t633vrtlapk6k6dnfps6834hs6f14d3b.apps.googleusercontent.com"
+             data-client_id="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
              data-callback="handleCredentialResponse"
              data-auto_prompt="false">
         </div>
@@ -62,9 +62,16 @@
         <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 mb-1">招生名額/註冊率/生師比查詢系統</h1>
         <p class="text-xs sm:text-sm text-slate-500">提供招生名額核定數、系所新生註冊率與生師比數據查詢</p>
       </div>
-      <div class="text-right">
-        <span id="userEmailBadge" class="text-xs bg-slate-100 text-slate-600 px-3 py-1.5 rounded-full font-medium border border-slate-200"></span>
-        <button onclick="logout()" class="ml-2 text-xs text-rose-600 hover:underline">登出</button>
+      <div class="text-right space-y-2">
+        <!-- 右上角單位名稱 -->
+        <div class="text-sm font-bold text-slate-700 flex items-center justify-end gap-1">
+          <span>🏫 教務處</span>
+        </div>
+        <!-- 帳號資訊與登出按鈕 -->
+        <div class="flex items-center justify-end gap-2">
+          <span id="userEmailBadge" class="text-xs bg-slate-100 text-slate-600 px-3 py-1.5 rounded-full font-medium border border-slate-200"></span>
+          <button onclick="logout()" class="text-xs text-rose-600 hover:underline font-medium">登出</button>
+        </div>
       </div>
     </div>
 
@@ -263,7 +270,7 @@
       <div class="bg-white p-6 rounded-b-xl shadow-sm border border-slate-200 space-y-4">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
           <h2 class="text-lg font-bold text-slate-700">🔍 生師比資料篩選器</h2>
-          <div class="text-xs text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full w-fit">ℹ 資料來源：教育部總量資源條件標準檢核結果</div>
+          <div class="text-xs text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full w-fit">ℹ️ 資料來源：教育部總量資源條件標準檢核結果</div>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div class="relative multi-select-container">
@@ -294,7 +301,7 @@
       </div>
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div class="bg-violet-600 text-white p-5 rounded-xl shadow-sm">
-          <div class="text-xs opacity-80 mb-1">平均生師比值 (應≤35)</div>
+          <div class="text-xs opacity-80 mb-1">平均生師比值 (一般≤35 / 獨研≤15)</div>
           <div id="rStatAvgRatio" class="text-3xl font-extrabold">0</div>
         </div>
         <div class="bg-teal-600 text-white p-5 rounded-xl shadow-sm">
@@ -307,7 +314,7 @@
         </div>
       </div>
       <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-        <h2 class="text-lg font-bold mb-4 text-slate-700">📈 歷年平均生師比變化 (應 ≤ 35)</h2>
+        <h2 class="text-lg font-bold mb-4 text-slate-700">📈 歷年平均生師比變化</h2>
         <div class="relative h-64 sm:h-80"><canvas id="ratioChart"></canvas></div>
       </div>
       <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
@@ -347,6 +354,15 @@
     let eChartObj = null;
     let rChartObj = null;
 
+    // 🔹 定義獨立研究所清單 (強制抓取博碩士生師比 ≤15)
+    const gradRatioDepts = ['科技法律研究所', '光電工程研究所'];
+
+    // 🔹 判斷系所應抓取的生師比數據 (獨立研究所抓 gradRatio，一般系所抓 totalRatio)
+    function getEffectiveRatio(r) {
+      const isGradDept = gradRatioDepts.some(d => r.dept.includes(d));
+      return isGradDept ? r.gradRatio : r.totalRatio;
+    }
+
     const multiSelectState = {
       qType: [], qYear: [], qSystem: [], qDomain: [], qDept: [],
       eYear: [], eDayNight: [], eClass: [], eDept: [],
@@ -378,7 +394,6 @@
       
       // 驗證信箱域名 (預設高科大 @nkust.edu.tw)
       if (email.endsWith('@nkust.edu.tw')) {
-        // 驗證成功，寫入 localStorage 紀錄登入狀態
         localStorage.setItem('nkust_user_email', email);
         unlockSystem(email);
       } else {
@@ -397,7 +412,6 @@
       document.getElementById('mainContent').classList.remove('hidden');
       document.getElementById('userEmailBadge').textContent = `👤 ${email}`;
       
-      // 解鎖後才下載並發送請求載入數據
       loadAllData();
     }
 
@@ -407,7 +421,6 @@
     }
 
     window.addEventListener('DOMContentLoaded', () => {
-      // 檢查是否已有暫存登入狀態
       const savedEmail = localStorage.getItem('nkust_user_email');
       if (savedEmail && savedEmail.endsWith('@nkust.edu.tw')) {
         unlockSystem(savedEmail);
@@ -849,7 +862,11 @@
         multiSelectState.rStatus.includes(r.status)
       );
 
-      const avgRatio = filtered.length > 0 ? (filtered.reduce((s, r) => s + r.totalRatio, 0) / filtered.length).toFixed(2) : "0.00";
+      // 🔹 使用 getEffectiveRatio(r) 計算平均生師比
+      const avgRatio = filtered.length > 0 
+        ? (filtered.reduce((s, r) => s + getEffectiveRatio(r), 0) / filtered.length).toFixed(2) 
+        : "0.00";
+
       const passCount = filtered.filter(r => r.status === '符合').length;
       const passRate = filtered.length > 0 ? ((passCount / filtered.length) * 100).toFixed(1) : "0.0";
       const totalFaculty = filtered.reduce((s, r) => s + r.teacherCount, 0);
@@ -886,12 +903,17 @@
       const yearMap = {};
       data.forEach(r => {
         if (!yearMap[r.year]) yearMap[r.year] = { sum: 0, count: 0 };
-        yearMap[r.year].sum += r.totalRatio;
+        // 🔹 使用 getEffectiveRatio(r) 進行數值累加
+        yearMap[r.year].sum += getEffectiveRatio(r);
         yearMap[r.year].count += 1;
       });
 
       const years = Object.keys(yearMap).sort((a,b)=>a-b);
       const avgRatios = years.map(y => (yearMap[y].sum / yearMap[y].count).toFixed(2));
+
+      // 🔹 判斷目前選擇的系所是否均為獨立研究所，並動態顯示標籤說明
+      const isOnlyGradDepts = data.length > 0 && data.every(r => gradRatioDepts.some(d => r.dept.includes(d)));
+      const datasetLabel = isOnlyGradDepts ? '平均博碩士生師比 (≤15)' : '平均生師比值';
 
       const ctx = document.getElementById('ratioChart').getContext('2d');
       if (rChartObj) rChartObj.destroy();
@@ -900,7 +922,7 @@
         data: {
           labels: years.map(y => `${y} 學年度`),
           datasets: [{
-            label: '平均生師比值',
+            label: datasetLabel,
             data: avgRatios,
             borderColor: 'rgba(124, 58, 237, 1)',
             backgroundColor: 'rgba(124, 58, 237, 0.1)',
