@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>歷年招生名額與註冊率查詢系統</title>
+  <title>歷年招生名額與註冊率</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- PapaParse -->
@@ -512,7 +512,23 @@
           labels: years.map(y => `${y} 學年度`),
           datasets: [{ label: '招生名額', data: values, backgroundColor: 'rgba(59, 130, 246, 0.85)', borderRadius: 6 }]
         },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            datalabels: {
+              color: '#FFFFFF',
+              font: {
+                size: 15,
+                weight: 'bold'
+              },
+              anchor: 'center',
+              align: 'center',
+              formatter: (val) => val.toLocaleString()
+            }
+          }
+        }
       });
     }
 
@@ -609,6 +625,11 @@
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          plugins: {
+            datalabels: {
+              display: false
+            }
+          },
           scales: {
             y: { min: 0, max: 100 }
           }
