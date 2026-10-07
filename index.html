@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>招生名額/註冊率/生師比查詢系統</title>
+  <title>招生名額/註冊率/師資質量考核查詢系統</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- PapaParse -->
@@ -59,8 +59,8 @@
     <!-- 頂部頁頭 -->
     <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex justify-between items-center">
       <div>
-        <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 mb-1">招生名額/註冊率/生師比查詢系統</h1>
-        <p class="text-xs sm:text-sm text-slate-500">提供招生名額核定數、系所新生註冊率與生師比數據查詢</p>
+        <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 mb-1">招生名額/註冊率/師資質量考核查詢系統</h1>
+        <p class="text-xs sm:text-sm text-slate-500">提供招生名額核定數、系所新生註冊率與師資質量考核數據查詢</p>
       </div>
       <div class="text-right space-y-2">
         <!-- 右上角單位名稱 -->
@@ -83,7 +83,7 @@
         🎓 新生註冊率查詢
       </button>
       <button id="tabBtnRatio" onclick="switchTab('ratio')" class="py-3 px-6 text-sm font-bold border-b-2 transition-all flex items-center gap-2 border-transparent text-slate-500 hover:text-slate-700 whitespace-nowrap">
-        👨‍🏫 生師比查詢
+        👨‍🏫 師資質量考核查詢
       </button>
     </div>
 
@@ -285,11 +285,11 @@
       </div>
     </div>
 
-    <!-- Tab 3: 生師比內容 -->
+    <!-- Tab 3: 師資質量考核內容 -->
     <div id="tabRatioContent" class="space-y-6 hidden">
       <div class="bg-white p-6 rounded-b-xl shadow-sm border border-slate-200 space-y-4">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
-          <h2 class="text-lg font-bold text-slate-700">🔍 生師比資料篩選器</h2>
+          <h2 class="text-lg font-bold text-slate-700">🔍 師資質量考核資料篩選器</h2>
           <div class="text-xs text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full w-fit">ℹ️ 資料來源：教育部總量資源條件標準檢核結果</div>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -339,7 +339,7 @@
       </div>
       <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         <div class="p-4 border-b border-slate-200 font-bold text-slate-700 flex justify-between items-center">
-          <span>📋 系所生師比詳細明細</span>
+          <span>📋 系所師資質量考核詳細明細</span>
           <span id="rTableInfo" class="text-xs text-slate-500"></span>
         </div>
         <div class="overflow-x-auto">
