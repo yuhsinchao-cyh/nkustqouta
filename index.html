@@ -24,9 +24,9 @@
         🔒
       </div>
       <div>
-        <h2 class="text-2xl font-bold text-slate-800 mb-2">查詢系統 - 身份驗證</h2>
+        <h2 class="text-2xl font-bold text-slate-800 mb-2">校務查詢系統 - 身份驗證</h2>
         <p class="text-xs text-slate-500 leading-relaxed">
-          本系統資料僅供校內查詢使用。<br>
+          本系統僅供校內使用。<br>
           請登入國立高雄科技大學教職員電子郵件（<span class="font-bold text-blue-600">@nkust.edu.tw</span>）進行驗證。
         </p>
       </div>
@@ -59,12 +59,13 @@
     <!-- 頂部頁頭 -->
     <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex justify-between items-center">
       <div>
-        <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 mb-1">招生名額/註冊率/師資質量考核查詢系統</h1>
-        <p class="text-xs sm:text-sm text-slate-500">提供招生名額核定數、系所新生註冊率與師資質量考核數據查詢</p>
+        <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 mb-1">招生名額/註冊率/師資質量查詢系統</h1>
+        <p class="text-xs sm:text-sm text-slate-500">提供招生名額核定數、系所新生註冊率與師資質量數據查詢</p>
       </div>
       <div class="text-right space-y-2">
         <!-- 右上角單位名稱 -->
         <div class="text-sm font-bold text-slate-700 flex items-center justify-end gap-1">
+          <span>🏫 教務處招生組</span>
         </div>
         <!-- 帳號資訊與登出按鈕 -->
         <div class="flex items-center justify-end gap-2">
@@ -249,9 +250,9 @@
       </div>
 
       <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-        <!-- 🔹 新增：右上方公式說明區塊 -->
+        <!-- 圖表標題與右上方公式說明 -->
         <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-2 mb-4">
-          <h2 class="text-lg font-bold text-slate-700">📉 歷年平均註冊率變化 ( % )</h2>
+          <h2 id="enrollChartTitle" class="text-lg font-bold text-slate-700">📉 歷年平均註冊率變化 ( % )</h2>
           <div class="text-xs text-slate-600 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200 font-medium">
             💡 新生註冊率(%)=[(實際註冊人數+境外實際註冊人數)/(總量內核定招生名額-保留入學資格人數+境外實際註冊人數)]*100%
           </div>
@@ -369,6 +370,7 @@
     let quotaRawData = [];
     let enrollRawData = [];
     let ratioRawData = [];
+    let totalEnrollDeptCount = 0;
     
     let qChartObj = null;
     let eChartObj = null;
@@ -788,6 +790,8 @@
       const classes = [...new Set(enrollRawData.map(d => d.systemClass))].filter(Boolean).sort();
       const depts = [...new Set(enrollRawData.map(d => d.dept))].filter(Boolean).sort();
 
+      totalEnrollDeptCount = depts.length;
+
       setupMultiSelect('eFilterYearMenu', years, 'eYear', 'eFilterYearLabel', '全部學年度', updateEnrollView);
       setupMultiSelect('eFilterDayNightMenu', dayNights, 'eDayNight', 'eFilterDayNightLabel', '全部類別', updateEnrollView);
       setupMultiSelect('eFilterClassMenu', classes, 'eClass', 'eFilterClassLabel', '全部班別', updateEnrollView);
@@ -834,15 +838,98 @@
     }
 
     function renderEnrollChart(data) {
-      const yearMap = {};
-      data.forEach(r => {
-        if (!yearMap[r.year]) yearMap[r.year] = { sum: 0, count: 0 };
-        yearMap[r.year].sum += r.rate;
-        yearMap[r.year].count += 1;
-      });
+      const years = [...new Set(data.map(r => r.year))].sort((a, b) => a - b);
+      const selectedDepts = (multiSelectState.eDept || []).slice().sort();
+      const chartTitleEl = document.getElementById('enrollChartTitle');
 
-      const years = Object.keys(yearMap).sort((a,b)=>a-b);
-      const avgRates = years.map(y => (yearMap[y].sum / yearMap[y].count).toFixed(2));
+      const linePalette = [
+        { border: '#4F46E5', bg: 'rgba(79, 70, 229, 0.12)' },  // 靛藍
+        { border: '#E11D48', bg: 'rgba(225, 29, 72, 0.12)' },  // 玫紅
+        { border: '#059669', bg: 'rgba(5, 150, 105, 0.12)' },  // 翠綠
+        { border: '#D97706', bg: 'rgba(217, 119, 6, 0.12)' },  // 琥珀
+        { border: '#7C3AED', bg: 'rgba(124, 58, 237, 0.12)' }, // 紫羅蘭
+        { border: '#0284C7', bg: 'rgba(2, 132, 199, 0.12)' },  // 天藍
+        { border: '#DB2777', bg: 'rgba(219, 39, 119, 0.12)' }, // 粉紅
+        { border: '#0D9488', bg: 'rgba(13, 148, 136, 0.12)' }  // 青綠
+      ];
+
+      // 選擇特定系所（1個或2個以上，非全選狀態）時，分別繪製各系所折線
+      const isSpecificDepts = selectedDepts.length > 0 && (selectedDepts.length < totalEnrollDeptCount || totalEnrollDeptCount <= 15);
+      let datasets = [];
+
+      if (isSpecificDepts) {
+        if (chartTitleEl) {
+          chartTitleEl.textContent = selectedDepts.length === 1
+            ? `📉 ${selectedDepts[0]} 歷年註冊率變化 ( % )`
+            : `📉 各系所歷年註冊率變化比較 ( % )`;
+        }
+
+        datasets = selectedDepts.map((dept, idx) => {
+          const color = linePalette[idx % linePalette.length] || {
+            border: `hsl(${(idx * 137.5) % 360}, 70%, 45%)`,
+            bg: `hsla(${(idx * 137.5) % 360}, 70%, 45%, 0.12)`
+          };
+
+          const deptRates = years.map(y => {
+            const rows = data.filter(r => r.dept === dept && r.year === y);
+            if (rows.length === 0) return null;
+            const avg = rows.reduce((s, r) => s + r.rate, 0) / rows.length;
+            return Number(avg.toFixed(2));
+          });
+
+          return {
+            label: dept,
+            data: deptRates,
+            borderColor: color.border,
+            backgroundColor: color.bg,
+            borderWidth: 3,
+            fill: selectedDepts.length === 1,
+            tension: 0.3,
+            pointRadius: 5,
+            pointHoverRadius: 7,
+            spanGaps: true,
+            datalabels: {
+              display: selectedDepts.length <= 5,
+              color: color.border,
+              font: { size: 12, weight: 'bold' },
+              align: 'top',
+              offset: 4,
+              formatter: (v) => (v !== null && v !== undefined ? `${v}%` : '')
+            }
+          };
+        });
+      } else {
+        if (chartTitleEl) {
+          chartTitleEl.textContent = '📉 歷年平均註冊率變化 ( % )';
+        }
+
+        const yearMap = {};
+        data.forEach(r => {
+          if (!yearMap[r.year]) yearMap[r.year] = { sum: 0, count: 0 };
+          yearMap[r.year].sum += r.rate;
+          yearMap[r.year].count += 1;
+        });
+
+        const avgRates = years.map(y => Number((yearMap[y].sum / yearMap[y].count).toFixed(2)));
+
+        datasets = [{
+          label: '平均註冊率 (%)',
+          data: avgRates,
+          borderColor: 'rgba(79, 70, 229, 1)',
+          backgroundColor: 'rgba(79, 70, 229, 0.1)',
+          borderWidth: 3,
+          fill: true,
+          tension: 0.3,
+          pointRadius: 5,
+          datalabels: {
+            display: true,
+            color: '#4F46E5',
+            font: { size: 13, weight: 'bold' },
+            align: 'top',
+            formatter: (v) => `${v}%`
+          }
+        }];
+      }
 
       const ctx = document.getElementById('enrollChart').getContext('2d');
       if (eChartObj) eChartObj.destroy();
@@ -850,20 +937,30 @@
         type: 'line',
         data: {
           labels: years.map(y => `${y} 學年度`),
-          datasets: [{
-            label: '平均註冊率 (%)',
-            data: avgRates,
-            borderColor: 'rgba(79, 70, 229, 1)',
-            backgroundColor: 'rgba(79, 70, 229, 0.1)',
-            borderWidth: 3, fill: true, tension: 0.3, pointRadius: 5
-          }]
+          datasets
         },
         options: {
-          responsive: true, maintainAspectRatio: false,
-          plugins: {
-            datalabels: { color: '#4F46E5', font: { size: 13, weight: 'bold' }, align: 'top', formatter: (v) => `${v}%` }
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            mode: 'index',
+            intersect: false
           },
-          scales: { y: { min: 0, max: 100 } }
+          plugins: {
+            legend: {
+              display: true,
+              position: 'top',
+              labels: { usePointStyle: true, padding: 16, font: { size: 12, weight: 'bold' } }
+            },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y !== null ? ctx.parsed.y + '%' : '無資料'}`
+              }
+            }
+          },
+          scales: {
+            y: { min: 0, max: 105 }
+          }
         }
       });
     }
@@ -925,13 +1022,14 @@
 
       document.getElementById('rTableBody').innerHTML = filtered.map(r => {
         const statusColor = r.status === '符合' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800';
+        const teacherColor = Number(r.teacherCount) < Number(r.teacherStd) ? 'text-rose-600 font-bold' : 'text-slate-800 font-bold';
         return `
           <tr class="border-b border-slate-100 hover:bg-slate-50">
             <td class="px-3 py-3 font-semibold text-slate-800">${r.year}</td>
             <td class="px-3 py-3 font-medium text-violet-700">${r.dept}</td>
             <td class="px-3 py-3 text-right">
               <span class="text-xs text-slate-400">≥${r.teacherStd} / </span>
-              <span class="font-bold text-slate-800">${r.teacherCount}</span>
+              <span class="${teacherColor}">${r.teacherCount}</span>
             </td>
             <td class="px-3 py-3 text-right font-medium ${r.gradRatio > 15 ? 'text-rose-600 font-bold' : 'text-slate-700'}">${r.gradRatio.toFixed(2)}</td>
             <td class="px-3 py-3 text-right font-medium ${r.totalRatio > 35 ? 'text-rose-600 font-bold' : 'text-slate-700'}">${r.totalRatio.toFixed(2)}</td>
