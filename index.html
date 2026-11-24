@@ -853,15 +853,80 @@
         { border: '#0D9488', bg: 'rgba(13, 148, 136, 0.12)' }  // 青綠
       ];
 
-      // 選擇特定系所（1個或2個以上，非全選狀態）時，分別繪製各系所折線
       const isSpecificDepts = selectedDepts.length > 0 && (selectedDepts.length < totalEnrollDeptCount || totalEnrollDeptCount <= 15);
       let datasets = [];
 
-      if (isSpecificDepts) {
+      if (selectedDepts.length === 1) {
+        // 選擇單一系所 -> 依「學制班別」拆分成多條折線
+        const targetDept = selectedDepts[0];
+        const hasMultipleDayNight = [...new Set(data.map(r => r.dayNight))].filter(Boolean).length > 1;
+
+        const seriesKeys = [];
+        const seenKeys = new Set();
+        data.forEach(r => {
+          const label = hasMultipleDayNight && r.dayNight
+            ? `${r.systemClass} (${r.dayNight})`
+            : r.systemClass;
+          if (label && !seenKeys.has(label)) {
+            seenKeys.add(label);
+            seriesKeys.push({
+              label,
+              systemClass: r.systemClass,
+              dayNight: hasMultipleDayNight ? r.dayNight : null
+            });
+          }
+        });
+        seriesKeys.sort((a, b) => a.label.localeCompare(b.label, 'zh-Hant'));
+
         if (chartTitleEl) {
-          chartTitleEl.textContent = selectedDepts.length === 1
-            ? `📉 ${selectedDepts[0]} 歷年註冊率變化 ( % )`
-            : `📉 各系所歷年註冊率變化比較 ( % )`;
+          chartTitleEl.textContent = seriesKeys.length > 1
+            ? `📉 ${targetDept} 各學制班別歷年註冊率變化 ( % )`
+            : `📉 ${targetDept} 歷年註冊率變化 ( % )`;
+        }
+
+        datasets = seriesKeys.map((series, idx) => {
+          const color = linePalette[idx % linePalette.length] || {
+            border: `hsl(${(idx * 137.5) % 360}, 70%, 45%)`,
+            bg: `hsla(${(idx * 137.5) % 360}, 70%, 45%, 0.12)`
+          };
+
+          const classRates = years.map(y => {
+            const rows = data.filter(r =>
+              r.dept === targetDept &&
+              r.year === y &&
+              r.systemClass === series.systemClass &&
+              (series.dayNight === null || r.dayNight === series.dayNight)
+            );
+            if (rows.length === 0) return null;
+            const avg = rows.reduce((s, r) => s + r.rate, 0) / rows.length;
+            return Number(avg.toFixed(2));
+          });
+
+          return {
+            label: series.label,
+            data: classRates,
+            borderColor: color.border,
+            backgroundColor: color.bg,
+            borderWidth: 3,
+            fill: seriesKeys.length === 1,
+            tension: 0.3,
+            pointRadius: 5,
+            pointHoverRadius: 7,
+            spanGaps: true,
+            datalabels: {
+              display: seriesKeys.length <= 5,
+              color: color.border,
+              font: { size: 12, weight: 'bold' },
+              align: 'top',
+              offset: 4,
+              formatter: (v) => (v !== null && v !== undefined ? `${v}%` : '')
+            }
+          };
+        });
+      } else if (isSpecificDepts) {
+        // 選擇多個特定系所（2個以上） -> 依「各系所」繪製比較折線
+        if (chartTitleEl) {
+          chartTitleEl.textContent = '📉 各系所歷年註冊率變化比較 ( % )';
         }
 
         datasets = selectedDepts.map((dept, idx) => {
@@ -883,7 +948,7 @@
             borderColor: color.border,
             backgroundColor: color.bg,
             borderWidth: 3,
-            fill: selectedDepts.length === 1,
+            fill: false,
             tension: 0.3,
             pointRadius: 5,
             pointHoverRadius: 7,
@@ -899,6 +964,7 @@
           };
         });
       } else {
+        // 全選所有系所 -> 顯示全體平均註冊率折線
         if (chartTitleEl) {
           chartTitleEl.textContent = '📉 歷年平均註冊率變化 ( % )';
         }
