@@ -842,16 +842,20 @@
       const selectedDepts = (multiSelectState.eDept || []).slice().sort();
       const chartTitleEl = document.getElementById('enrollChartTitle');
 
+      // 高對比度調色盤（確保各學制班別顏色明顯區隔）
       const linePalette = [
-        { border: '#4F46E5', bg: 'rgba(79, 70, 229, 0.12)' },  // 靛藍
-        { border: '#E11D48', bg: 'rgba(225, 29, 72, 0.12)' },  // 玫紅
-        { border: '#059669', bg: 'rgba(5, 150, 105, 0.12)' },  // 翠綠
-        { border: '#D97706', bg: 'rgba(217, 119, 6, 0.12)' },  // 琥珀
-        { border: '#7C3AED', bg: 'rgba(124, 58, 237, 0.12)' }, // 紫羅蘭
-        { border: '#0284C7', bg: 'rgba(2, 132, 199, 0.12)' },  // 天藍
-        { border: '#DB2777', bg: 'rgba(219, 39, 119, 0.12)' }, // 粉紅
-        { border: '#0D9488', bg: 'rgba(13, 148, 136, 0.12)' }  // 青綠
+        { border: '#2563EB', bg: 'rgba(37, 99, 235, 0.12)' },   // 寶藍色
+        { border: '#DC2626', bg: 'rgba(220, 38, 38, 0.12)' },   // 鮮紅色
+        { border: '#16A34A', bg: 'rgba(22, 163, 74, 0.12)' },   // 翠綠色
+        { border: '#EA580C', bg: 'rgba(234, 88, 12, 0.12)' },   // 亮橘色
+        { border: '#9333EA', bg: 'rgba(147, 51, 234, 0.12)' },  // 亮紫色
+        { border: '#0891B2', bg: 'rgba(8, 145, 178, 0.12)' },   // 青藍色
+        { border: '#CA8A04', bg: 'rgba(202, 138, 4, 0.12)' },   // 芥末黃
+        { border: '#BE185D', bg: 'rgba(190, 24, 93, 0.12)' },   // 洋紅色
+        { border: '#475569', bg: 'rgba(71, 85, 105, 0.12)' },   // 石板灰
+        { border: '#65A30D', bg: 'rgba(101, 163, 13, 0.12)' }   // 萊姆綠
       ];
+      const pointStyles = ['circle', 'rect', 'triangle', 'rectRot', 'star', 'crossRot', 'circle', 'rect', 'triangle', 'rectRot'];
 
       const isSpecificDepts = selectedDepts.length > 0 && (selectedDepts.length < totalEnrollDeptCount || totalEnrollDeptCount <= 15);
       let datasets = [];
@@ -886,8 +890,8 @@
 
         datasets = seriesKeys.map((series, idx) => {
           const color = linePalette[idx % linePalette.length] || {
-            border: `hsl(${(idx * 137.5) % 360}, 70%, 45%)`,
-            bg: `hsla(${(idx * 137.5) % 360}, 70%, 45%, 0.12)`
+            border: `hsl(${(idx * 137.5) % 360}, 75%, 45%)`,
+            bg: `hsla(${(idx * 137.5) % 360}, 75%, 45%, 0.12)`
           };
 
           const classRates = years.map(y => {
@@ -910,6 +914,7 @@
             borderWidth: 3,
             fill: seriesKeys.length === 1,
             tension: 0.3,
+            pointStyle: pointStyles[idx % pointStyles.length],
             pointRadius: 5,
             pointHoverRadius: 7,
             spanGaps: true,
@@ -931,8 +936,8 @@
 
         datasets = selectedDepts.map((dept, idx) => {
           const color = linePalette[idx % linePalette.length] || {
-            border: `hsl(${(idx * 137.5) % 360}, 70%, 45%)`,
-            bg: `hsla(${(idx * 137.5) % 360}, 70%, 45%, 0.12)`
+            border: `hsl(${(idx * 137.5) % 360}, 75%, 45%)`,
+            bg: `hsla(${(idx * 137.5) % 360}, 75%, 45%, 0.12)`
           };
 
           const deptRates = years.map(y => {
@@ -950,6 +955,7 @@
             borderWidth: 3,
             fill: false,
             tension: 0.3,
+            pointStyle: pointStyles[idx % pointStyles.length],
             pointRadius: 5,
             pointHoverRadius: 7,
             spanGaps: true,
@@ -981,15 +987,15 @@
         datasets = [{
           label: '平均註冊率 (%)',
           data: avgRates,
-          borderColor: 'rgba(79, 70, 229, 1)',
-          backgroundColor: 'rgba(79, 70, 229, 0.1)',
+          borderColor: 'rgba(37, 99, 235, 1)',
+          backgroundColor: 'rgba(37, 99, 235, 0.1)',
           borderWidth: 3,
           fill: true,
           tension: 0.3,
           pointRadius: 5,
           datalabels: {
             display: true,
-            color: '#4F46E5',
+            color: '#2563EB',
             font: { size: 13, weight: 'bold' },
             align: 'top',
             formatter: (v) => `${v}%`
